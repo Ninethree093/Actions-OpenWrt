@@ -88,12 +88,17 @@ jobs:
       id: codes
       if: steps.init.outputs.status == 'success' && success()
       run: |
-        git clone --depth 1 "$REPO_URL" -b "$REPO_BRANCH" openwrt
+        git clone "$REPO_URL" -b "$REPO_BRANCH" openwrt
+        cd openwrt
+        git pull origin "$REPO_BRANCH"
+        git log --oneline -1
+        cd ..
         if [ -n "$GITHUB_OUTPUT" ]; then
         echo "status=success" >> "$GITHUB_OUTPUT"
         else
         echo "::set-output name=status::success"
         fi
+
        
     - name: Free up disk space
       run: |
