@@ -10,8 +10,3 @@ echo 'src-git QModem https://github.com/FUjr/QModem' >> feeds.conf.default
 # OpenClash
 git clone --depth 1 https://github.com/vernesong/OpenClash.git OpenClash
 
-# temp
-git clone https://github.com/gSpotx2f/luci-app-cpu-perf package/luci-app-cpu-perf
-git clone https://github.com/lkiuyu/luci-app-cpu-status package/luci-app-cpu-status
-git clone https://github.com/gSpotx2f/luci-app-cpu-status-mini package/luci-app-cpu-status-mini
-git clone https://github.com/gSpotx2f/luci-app-temp-status package/luci-app-temp-status
