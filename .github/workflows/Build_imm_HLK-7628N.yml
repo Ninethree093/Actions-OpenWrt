@@ -222,15 +222,26 @@ jobs:
       if: always()
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        RETAIN_DAYS: 7
+        KEEP_MINIMUM_RUNS: 5
       run: |
         RUNS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
           "https://api.github.com/repos/${{ github.repository }}/actions/runs?per_page=100")
-        CUTOFF=$(date -d "-7 days" +%s)
-        echo "$RUNS" | jq -r --arg cutoff "$CUTOFF" '
-          .workflow_runs[]
-          | select((now - (.created_at | fromdateiso8601)) > ($cutoff | tonumber))
-          | .id' | while read run_id; do
-            echo "Deleting run $run_id"
-            curl -X DELETE -H "Authorization: token $GITHUB_TOKEN" \
-              "https://api.github.com/repos/${{ github.repository }}/actions/runs/$run_id"
+        CUTOFF=$(date -d "-${RETAIN_DAYS} days" +%s)
+        DEL_IDS=$(echo "$RUNS" | jq -r --arg cutoff "$CUTOFF" --argjson keep "$KEEP_MINIMUM_RUNS" '
+          [.workflow_runs[]
+            | select((now - (.created_at | fromdateiso8601)) > ($cutoff | tonumber))
+            | {id, created_at}
+          ]
+          | sort_by(.created_at)
+          | .[:-$keep]
+          | .[].id
+        ')
+        echo "$DEL_IDS" | while read run_id; do
+          [[ -n "$run_id" ]] || continue
+          echo "Deleting run $run_id"
+          curl -X DELETE -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/$run_id"
         done
+
+
