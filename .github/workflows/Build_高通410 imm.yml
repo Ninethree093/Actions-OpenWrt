@@ -158,9 +158,7 @@ jobs:
 
     - name: 查看 openwrt 目录
       run: ls -la openwrt/
-      
            ls -l .config
-      
            ls -la openwrt/.config
 
  
