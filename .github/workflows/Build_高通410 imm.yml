@@ -157,11 +157,9 @@ jobs:
         find dl -size -1024c -exec rm -f {} \;
 
     - name: 查看 openwrt 目录
-      run: ls -la openwrt/
-      
-           ls -l .config
-      
-           ls -la openwrt/.config
+      run: |
+        ls -la openwrt/
+        [ -f openwrt/.config ] && ls -l openwrt/.config || echo "Config file not found"
 
  
     - name: 自动上传最新源码生成.config编译配置
