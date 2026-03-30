@@ -1,18 +1,25 @@
 #!/bin/bash
 
-# 1. 强行拉取 msm8916 的硬件适配代码 (Target)
-# 我们需要从 xuxin1955 的仓库里把 target/linux/msm8916 文件夹搬过来
+# 1. 移植硬件支持
+rm -rf target/linux/msm8916
 git clone --depth 1 https://github.com/xuxin1955/immortalwrt temp_repo
-cp -r temp_repo/target/linux/msm8916 target/linux/
-rm -rf temp_repo
+mv temp_repo/target/linux/msm8916 target/linux/msm8916
 
-# 2. 补齐必要的 mkbootimg 编译工具支持（如果源码里没有）
-# MSM8916 编译最后生成 boot.img 需要此工具
-if [ ! -f "scripts/mkbootimg" ]; then
-    wget https://raw.githubusercontent.com/xuxin1955/immortalwrt/master/scripts/mkbootimg -P scripts/
-    chmod +x scripts/mkbootimg
+# 2. 关键：内核补丁版本对齐
+# 官方 24.10.5 使用 6.6 内核，如果移植过来的目录里没有 patches-6.6，就强行创建一个链接
+cd target/linux/msm8916
+if [ ! -d "patches-6.6" ]; then
+    # 寻找最接近的补丁目录（例如 6.1）并创建软连接或改名
+    BEST_FIT=$(ls -d patches-* | sort -V | tail -n 1)
+    echo "Using $BEST_FIT as base for patches-6.6"
+    cp -r "$BEST_FIT" patches-6.6
 fi
+cd ../../../
 
-# 3. 添加必要的外部 feeds（如基带管理工具）
-# 在 feeds.conf.default 末尾追加适配者常用的源
-echo "src-git msm8916 https://github.com/xuxin1955/openwrt-packages;main" >> feeds.conf.default
+# 3. 移植工具与插件
+cp temp_repo/scripts/mkbootimg scripts/ 2>/dev/null || wget https://raw.githubusercontent.com/xuxin1955/immortalwrt/master/scripts/mkbootimg -P scripts/
+chmod +x scripts/mkbootimg
+
+rm -rf package/msm8916-packages
+git clone --depth 1 https://github.com/xuxin1955/openwrt-packages package/msm8916-packages
+rm -rf temp_repo
