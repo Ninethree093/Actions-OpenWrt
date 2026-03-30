@@ -1,25 +1,42 @@
 #!/bin/bash
 
-# 1. 移植硬件支持
-rm -rf target/linux/msm8916
+# --- 1. 强力移植 Target 目录 ---
+# 先清理旧的残余
+rm -rf target/linux/msm89xx target/linux/msm8916
+
+# 克隆魔改仓库
 git clone --depth 1 https://github.com/xuxin1955/immortalwrt temp_repo
-mv temp_repo/target/linux/msm8916 target/linux/msm8916
 
-# 2. 关键：内核补丁版本对齐
-# 官方 24.10.5 使用 6.6 内核，如果移植过来的目录里没有 patches-6.6，就强行创建一个链接
-cd target/linux/msm8916
-if [ ! -d "patches-6.6" ]; then
-    # 寻找最接近的补丁目录（例如 6.1）并创建软连接或改名
-    BEST_FIT=$(ls -d patches-* | sort -V | tail -n 1)
-    echo "Using $BEST_FIT as base for patches-6.6"
-    cp -r "$BEST_FIT" patches-6.6
+# 自动判断对方仓库的文件夹名称并搬运
+if [ -d "temp_repo/target/linux/msm89xx" ]; then
+    mv temp_repo/target/linux/msm89xx target/linux/msm89xx
+    echo "Found target: msm89xx"
+elif [ -d "temp_repo/target/linux/msm8916" ]; then
+    mv temp_repo/target/linux/msm8916 target/linux/msm89xx
+    echo "Found target: msm8916, renamed to msm89xx"
 fi
-cd ../../../
 
-# 3. 移植工具与插件
-cp temp_repo/scripts/mkbootimg scripts/ 2>/dev/null || wget https://raw.githubusercontent.com/xuxin1955/immortalwrt/master/scripts/mkbootimg -P scripts/
-chmod +x scripts/mkbootimg
+# --- 2. 内核版本对齐 (针对 24.10.5 的 Kernel 6.6) ---
+# 进入新搬来的目录，确保有 patches-6.6
+if [ -d "target/linux/msm89xx" ]; then
+    cd target/linux/msm89xx
+    if [ ! -d "patches-6.6" ]; then
+        # 寻找现有的最高版本补丁作为模板
+        BEST_FIT=$(ls -d patches-* 2>/dev/null | sort -V | tail -n 1)
+        if [ -n "$BEST_FIT" ]; then
+            cp -r "$BEST_FIT" patches-6.6
+            echo "Linked $BEST_FIT to patches-6.6"
+        fi
+    fi
+    cd ../../../
+fi
+
+# --- 3. 搬运编译脚本和插件 ---
+[ -f "temp_repo/scripts/mkbootimg" ] && cp temp_repo/scripts/mkbootimg scripts/
+chmod +x scripts/mkbootimg 2>/dev/null
 
 rm -rf package/msm8916-packages
 git clone --depth 1 https://github.com/xuxin1955/openwrt-packages package/msm8916-packages
+
+# 清理
 rm -rf temp_repo
