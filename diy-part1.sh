@@ -1,32 +1,17 @@
 #!/bin/bash
-#
-# https://github.com/P3TERX/Actions-OpenWrt
-# File name: diy-part1.sh
-# Description: OpenWrt DIY script part 1 (Before Update feeds)
-#
-# Copyright (c) 2019-2024 P3TERX <https://p3terx.com>
-#
-# This is free software, licensed under the MIT License.
-# See /LICENSE for more information.
-#
 
-# Uncomment a feed source
-# sed -i 's/^#\(.*helloworld\)/\1/' feeds.conf.default
+# 删除可能冲突的旧 target（如果有）
+rm -rf target/linux/msm8916
 
-# Add a feed source
-# echo 'src-git helloworld https://github.com/fw876/helloworld' >>feeds.conf.default
-# echo 'src-git passwall https://github.com/xiaorouji/openwrt-passwall' >>feeds.conf.default
+# 从适配者仓库强行拉取 msm8916 的支持包
+git clone --depth 1 https://github.com/xuxin1955/immortalwrt temp_repo
+mv temp_repo/target/linux/msm8916 target/linux/msm8916
 
-# echo 'src-git modemfeed https://github.com/koshev-msk/modemfeed' >>feeds.conf.default
-# echo 'src-git smpackage https://github.com/kenzok8/small-package' >>feeds.conf.default
-# echo 'src-git small https://github.com/kenzok8/small' >>feeds.conf.default
+# 关键：检查内核版本并适配
+# 如果官方是 6.6，而适配包里只有 patches-6.1，我们需要强行重命名尝试
+if [ -d "target/linux/msm8916/patches-6.1" ]; then
+    mv target/linux/msm8916/patches-6.1 target/linux/msm8916/patches-6.6
+fi
 
-# hlk7628n dts
-mkdir -p target/linux/ramips/dts/
-cp -f "$GITHUB_WORKSPACE/dts/mt7628an_hilink_hlk-7628n.dts" target/linux/ramips/dts/mt7628an_hilink_hlk-7628n.dts
-
-
-# turboacc
-# curl -sSL https://raw.githubusercontent.com/chenmozhijin/turboacc/luci/add_turboacc.sh -o add_turboacc.sh && bash add_turboacc.sh
-curl -sSL https://raw.githubusercontent.com/chenmozhijin/turboacc/luci/add_turboacc.sh -o add_turboacc.sh && bash add_turboacc.sh --no-sfe
-
+# 清理临时文件
+rm -rf temp_repo
