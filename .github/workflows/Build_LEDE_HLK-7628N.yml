@@ -186,7 +186,7 @@ jobs:
       uses: actions/upload-artifact@main
       if: steps.organize.outputs.status == 'success' && !cancelled()
       with:
-        name: OpenWrt_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
+        name: LEDE_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
         path: ${{ env.FIRMWARE }}/*
 
     - name: Generate release tag
@@ -195,11 +195,11 @@ jobs:
       run: |
         echo "release_tag=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
         cat <<EOF > release.txt
-        🚀 OpenWrt firmware for HILINK HLK-7628N WIFI路由模块
+        🚀 LEDE firmware for HILINK HLK-7628N WIFI路由模块
         ----------------------
         设备: HILINK HLK-7628N WIFI路由模块
         时间: $(date +"%Y-%m-%d %H:%M")
-        内核版本: 5.X.X
+        内核版本: 5.10.X
         源码仓库: $REPO_URL
         分支: $REPO_BRANCH
         EOF
@@ -222,6 +222,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag: ${{ steps.tag.outputs.release_tag }}
+        name: HILINK HLK-7628N WIFI路由模块的LEDE固件
         bodyFile: release.txt
         artifacts: ${{ env.FIRMWARE }}/**/*
         artifactErrorsFailBuild: false
