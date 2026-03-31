@@ -1,19 +1,25 @@
-# --- 4. 移植工具与插件 (修复版) ---
-# 先清理旧的临时目录和目标目录
-rm -rf temp_repo_pkg
+#!/bin/bash
+
+# --- 1. 移植 Target 目录 (必须包含，否则无法识别高通410) ---
+rm -rf target/linux/msm89xx
+git clone --depth 1 https://github.com/xuxin1955/immortalwrt temp_repo
+mv temp_repo/target/linux/msm89xx target/linux/msm89xx
+
+# --- 2. 强制降级内核版本 (适配 v24.10.5 的 6.6 内核) ---
+find target/linux/msm89xx -name "Makefile" -exec sed -i 's/KERNEL_PATCHVER:=.*/KERNEL_PATCHVER:=6.6/g' {} +
+
+# 补齐 patches 目录，防止内核编译校验失败
+if [ -d "target/linux/msm89xx/patches-6.12" ] && [ ! -d "target/linux/msm89xx/patches-6.6" ]; then
+    cp -r target/linux/msm89xx/patches-6.12 target/linux/msm89xx/patches-6.6
+fi
+
+# --- 3. 移植工具与插件 (你目前脚本的核心逻辑) ---
 rm -rf package/msm8916-packages
-
-# 1. 克隆包含 package 的主仓库 (由于仓库较大，使用 --depth 1 节省时间)
-git clone --depth 1 https://github.com/xuxin1955/immortalwrt temp_repo_pkg
-
-# 2. 将仓库内的 package 文件夹内容移动到你的编译目录中
-# 建议新建一个分类目录存放，防止与系统自带 package 冲突
 mkdir -p package/msm8916-packages
-cp -r temp_repo_pkg/package/* package/msm8916-packages/
+cp -r temp_repo/package/* package/msm8916-packages/
 
-# 3. 额外检查：如果需要特定的 mkbootimg 工具，也从这里提取
-[ -f "temp_repo_pkg/scripts/mkbootimg" ] && cp temp_repo_pkg/scripts/mkbootimg scripts/
+[ -f "temp_repo/scripts/mkbootimg" ] && cp temp_repo/scripts/mkbootimg scripts/
 chmod +x scripts/mkbootimg 2>/dev/null
 
-# 4. 清理临时仓库
-rm -rf temp_repo_pkg
+# 清理
+rm -rf temp_repo
