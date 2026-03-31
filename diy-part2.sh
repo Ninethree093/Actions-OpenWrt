@@ -26,3 +26,7 @@ git clone https://github.com/lkiuyu/DbusSmsForwardCPlus package/DbusSmsForwardCP
 
 # 修复内核补丁冲突，删除会导致编译失败的过时补丁
 rm -rf target/linux/msm89xx/patches-6.6/777-EDIT-CERT-MAKEFILE.patch
+
+# 修正旧插件对 wget-any 和 ca-certs 的错误依赖命名
+find package/msm8916-packages/ -name "Makefile" -exec sed -i 's/wget-any/wget/g' {} +
+find package/msm8916-packages/ -name "Makefile" -exec sed -i 's/ca-certs/ca-bundle/g' {} +
