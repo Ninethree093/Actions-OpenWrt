@@ -1,6 +1,4 @@
-src/gz immortalwrt_core https://mirrors.pku.edu.cn/immortalwrt/releases/24.10.5/targets/armsr/armv8/packages
-src/gz immortalwrt_base https://mirrors.pku.edu.cn/immortalwrt/releases/24.10.5/packages/aarch64_generic/base
-src/gz immortalwrt_luci https://mirrors.pku.edu.cn/immortalwrt/releases/24.10.5/packages/aarch64_generic/luci
-src/gz immortalwrt_packages https://mirrors.pku.edu.cn/immortalwrt/releases/24.10.5/packages/aarch64_generic/packages
-src/gz immortalwrt_routing https://mirrors.pku.edu.cn/immortalwrt/releases/24.10.5/packages/aarch64_generic/routing
-src/gz immortalwrt_telephony https://mirrors.pku.edu.cn/immortalwrt/releases/24.10.5/packages/aarch64_generic/telephony
+src-git packages https://github.com/immortalwrt/packages.git;openwrt-24.10
+src-git luci https://github.com/immortalwrt/luci.git;openwrt-24.10
+src-git routing https://github.com/openwrt/routing.git;openwrt-24.10
+src-git telephony https://github.com/openwrt/telephony.git;openwrt-24.10
