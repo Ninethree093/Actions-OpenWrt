@@ -24,9 +24,10 @@ git clone https://github.com/gSpotx2f/luci-app-cpu-status-mini package/luci-app-
 git clone https://github.com/lkiuyu/luci-app-temp-status package/luci-app-temp-status
 git clone https://github.com/lkiuyu/DbusSmsForwardCPlus package/DbusSmsForwardCPlus
 
-# 修复内核补丁冲突，删除会导致编译失败的过时补丁
+# 1. 修复内核补丁冲突 (之前的核心报错)
 rm -rf target/linux/msm89xx/patches-6.6/777-EDIT-CERT-MAKEFILE.patch
 
-# 修正旧插件对 wget-any 和 ca-certs 的错误依赖命名
-find package/msm8916-packages/ -name "Makefile" -exec sed -i 's/wget-any/wget/g' {} +
+# 2. 批量修复旧插件中已失效的依赖名称
+# 将 libcrypt-compat 统一指向新的兼容库（或删除，由系统自行处理）
+find package/msm8916-packages/ -name "Makefile" -exec sed -i 's/libcrypt-compat//g' {} +
 find package/msm8916-packages/ -name "Makefile" -exec sed -i 's/ca-certs/ca-bundle/g' {} +
