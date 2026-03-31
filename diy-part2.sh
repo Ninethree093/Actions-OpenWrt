@@ -23,3 +23,6 @@ git clone https://github.com/lkiuyu/luci-app-cpu-status package/luci-app-cpu-sta
 git clone https://github.com/gSpotx2f/luci-app-cpu-status-mini package/luci-app-cpu-status-mini
 git clone https://github.com/lkiuyu/luci-app-temp-status package/luci-app-temp-status
 git clone https://github.com/lkiuyu/DbusSmsForwardCPlus package/DbusSmsForwardCPlus
+
+# 修复内核补丁冲突，删除会导致编译失败的过时补丁
+rm -rf target/linux/msm89xx/patches-6.6/777-EDIT-CERT-MAKEFILE.patch
