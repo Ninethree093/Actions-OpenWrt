@@ -1,33 +1,19 @@
-#!/bin/bash
+# --- 4. 移植工具与插件 (修复版) ---
+# 先清理旧的临时目录和目标目录
+rm -rf temp_repo_pkg
+rm -rf package/msm8916-packages
 
-# --- 1. 移植 Target 目录 ---
-rm -rf target/linux/msm89xx
-git clone --depth 1 https://github.com/xuxin1955/immortalwrt temp_repo
-mv temp_repo/target/linux/msm89xx target/linux/msm89xx
+# 1. 克隆包含 package 的主仓库 (由于仓库较大，使用 --depth 1 节省时间)
+git clone --depth 1 https://github.com/xuxin1955/immortalwrt temp_repo_pkg
 
-# --- 2. 深度清洗：强制降级内核版本 ---
-# 递归搜索 msm89xx 目录下所有 Makefile，将 6.12 强制改为 6.6
-find target/linux/msm89xx -name "Makefile" -exec sed -i 's/KERNEL_PATCHVER:=6.12/KERNEL_PATCHVER:=6.6/g' {} +
-find target/linux/msm89xx -name "Makefile" -exec sed -i 's/KERNEL_PATCHVER:=.*/KERNEL_PATCHVER:=6.6/g' {} +
+# 2. 将仓库内的 package 文件夹内容移动到你的编译目录中
+# 建议新建一个分类目录存放，防止与系统自带 package 冲突
+mkdir -p package/msm8916-packages
+cp -r temp_repo_pkg/package/* package/msm8916-packages/
 
-# --- 3. 补齐 patches 目录 ---
-# 24.10.5 必须有 patches-6.6 文件夹才能通过校验
-cd target/linux/msm89xx
-if [ ! -d "patches-6.6" ]; then
-    # 找到现有的最高版本补丁（可能是 6.1 或 6.12）作为基础
-    BEST_FIT=$(ls -d patches-* 2>/dev/null | sort -V | tail -n 1)
-    if [ -n "$BEST_FIT" ]; then
-        cp -r "$BEST_FIT" patches-6.6
-        echo "Using $BEST_FIT as a template for patches-6.6"
-    fi
-fi
-cd ../../../
-
-# --- 4. 移植工具与插件 ---
-[ -f "temp_repo/scripts/mkbootimg" ] && cp temp_repo/scripts/mkbootimg scripts/
+# 3. 额外检查：如果需要特定的 mkbootimg 工具，也从这里提取
+[ -f "temp_repo_pkg/scripts/mkbootimg" ] && cp temp_repo_pkg/scripts/mkbootimg scripts/
 chmod +x scripts/mkbootimg 2>/dev/null
 
-rm -rf package/msm8916-packages
-git clone --depth 1 https://github.com/xuxin1955/openwrt-packages package/msm8916-packages
-
-rm -rf temp_repo
+# 4. 清理临时仓库
+rm -rf temp_repo_pkg
