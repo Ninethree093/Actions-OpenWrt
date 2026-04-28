@@ -168,15 +168,14 @@ jobs:
        include-hidden-files: true
       
        
-
-
-    - name: Test glib2 and libmbim only
+    - name: Download package
+      id: package
       run: |
         cd openwrt
-        make tools/install -j$(nproc) || make tools/install -j1 V=s
-        make toolchain/install -j$(nproc) || make toolchain/install -j1 V=s
-        make package/feeds/packages/glib2/compile -j$(nproc) || make package/feeds/packages/glib2/compile -j1 V=s
-        make package/feeds/packages/libmbim/compile -j$(nproc) || make package/feeds/packages/libmbim/compile -j1 V=s
+        make download -j4 V=s
+        find dl -size -1024c -exec ls -l {} \;
+        find dl -size -1024c -exec rm -f {} \;
+
         
     - name: Compile the firmware
       id: compile
