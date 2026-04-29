@@ -8,7 +8,10 @@
 #
 # This is free software, licensed under the MIT License.
 # See /LICENSE for more information.
-#
+
+# 8916dts
+mkdir -p target/linux/msm89xx/dts/
+cp -f "$GITHUB_WORKSPACE/scripts/dts/msm8916.dtsi" "target/linux/msm89xx/dts/msm8916.dtsi"
 
 # Uncomment a feed source
 # sed -i 's/^#\(.*helloworld\)/\1/' feeds.conf.default
