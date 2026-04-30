@@ -67,16 +67,6 @@ jobs:
         docker-images: false
         swap-storage: true
 
-    - name: Cache apt
-      uses: actions/cache@v5
-      with:
-        path: |
-          /var/cache/apt/archives
-          /var/lib/apt/lists
-        key: apt-${{ runner.os }}-${{ hashFiles('openwrt/.config') }}
-        restore-keys: |
-          apt-${{ runner.os }}-
-        
     - name: Initialization environment
       env:
         DEBIAN_FRONTEND: noninteractive
@@ -124,14 +114,8 @@ jobs:
         
     - name: Ensure Python build tools
       run: |
-       python3 -m pip cache purge
-       python3 -m pip install --upgrade --force-reinstall pip
-       python3 -m pip install --upgrade --force-reinstall 'setuptools>=65' wheel
-       python3 -m pip install --upgrade 'setuptools-scm>=8,<10'
-       python3 -m pip install --upgrade cython packaging tomli
-       python3 -m pip install Unidecode pyelftools
-       python3 -m pip --version
-       python3 -c "import setuptools.build_meta; print('setuptools.build_meta OK')"
+        python3 -m pip install --upgrade pip setuptools wheel
+        python3 -m pip install Unidecode
 
 
 
@@ -166,11 +150,19 @@ jobs:
         echo "📌 Local packages feed:"
         git -C feeds/packages log -1 --format="%H %ci %s"
 
-        echo "📌 Remote packages HEAD:"
-        git ls-remote https://github.com/immortalwrt/packages HEAD
+        echo "📌 Actual remote of feeds/packages:"
+        git -C feeds/packages remote get-url origin
+
+        echo "📌 Remote HEAD actually used:"
+        git -C feeds/packages ls-remote HEAD || true
+
+    - name: remove warning
+      run: |
+        cd openwrt
+        chmod 755 ./scripts/diy-part.sh
+        ./scripts/diy-part.sh
 
 
-        
     - name: Load custom DIY_P2_SH
       run: |
         [ -e files ] && mv files openwrt/files

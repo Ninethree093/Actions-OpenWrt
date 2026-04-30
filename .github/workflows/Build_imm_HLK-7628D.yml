@@ -59,7 +59,7 @@ jobs:
         DEBIAN_FRONTEND: noninteractive
       run: |
         sudo -E apt-get -y update
-        sudo -E apt-get -y install $(curl -fsSL https://raw.githubusercontent.com/xuxin1955/depend_ubuntu2204_openwrt/refs/heads/main/depend_ubuntu2204_openwrt)
+        sudo -E apt-get -y install --no-install-recommends $(curl -fsSL https://raw.githubusercontent.com/xuxin1955/depend_ubuntu2204_openwrt/refs/heads/main/depend_ubuntu2204_openwrt)
         echo "status=success" >> ${GITHUB_OUTPUT}
 
         
@@ -83,15 +83,8 @@ jobs:
         
     - name: Ensure Python build tools
       run: |
-       python3 -m pip cache purge
-       python3 -m pip install --upgrade --force-reinstall pip
-       python3 -m pip install --upgrade --force-reinstall 'setuptools>=65' wheel
-       python3 -m pip install --upgrade 'setuptools-scm>=8,<10'
-       python3 -m pip install --upgrade cython packaging tomli
-       python3 -m pip install Unidecode pyelftools
-       python3 -m pip --version
-       python3 -c "import setuptools.build_meta; print('setuptools.build_meta OK')"
-        
+        python3 -m pip install --upgrade pip setuptools wheel
+        python3 -m pip install Unidecode
         
     - name: Clone source code
       id: codes
@@ -131,6 +124,12 @@ jobs:
         ./scripts/feeds update -a
         
         ./scripts/feeds install -a -f
+        
+    - name: remove warning
+      run: |
+        cd openwrt
+        chmod 755 ./scripts/diy-part.sh
+        ./scripts/diy-part.sh
         
 
     - name: Configuration Customization

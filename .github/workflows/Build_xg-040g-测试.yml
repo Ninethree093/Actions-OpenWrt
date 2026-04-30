@@ -73,17 +73,16 @@ jobs:
            echo "IS_MASTER_PATCH=false" >> $GITHUB_ENV
          fi
            echo "REPO_BRANCH=$REPO_REF" >> $GITHUB_ENV
-
-
+           
       - name: Initialization environment
         id: init
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
           sudo -E apt-get -y update
-          sudo -E apt-get -y install $(curl -fsSL https://raw.githubusercontent.com/xuxin1955/depend_ubuntu2204_openwrt/refs/heads/main/depend_ubuntu2204_openwrt)
-          echo "status=success" >> ${GITHUB_OUTPUT}
-          
+          sudo -E apt-get -y install --no-install-recommends $(curl -fsSL https://raw.githubusercontent.com/xuxin1955/depend_ubuntu2204_openwrt/refs/heads/main/depend_ubuntu2204_openwrt)
+          echo "status=success" >> $GITHUB_OUTPUT
+
       - name: mkbootimg build
         run: |
           wget https://github.com/xuxin1955/depend_ubuntu2204_openwrt/releases/download/ubuntu_26.04_LTS_mkbootimg/mkbootimg_34.0.5-12build1_all.deb
@@ -183,6 +182,13 @@ jobs:
           ./scripts/feeds update -a
         
           ./scripts/feeds install -a -f
+          
+          
+      - name: remove warning
+        run: |
+          cd openwrt
+          chmod 755 ./scripts/diy-part.sh
+          ./scripts/diy-part.sh
 
       - name: Configuration Customization
         run: |
