@@ -128,8 +128,8 @@ jobs:
         
     - name: remove warning
       run: |
-        chmod 755 ./scripts/diy-part.sh
-        ./scripts/diy-part.sh
+        chmod 755 $GITHUB_WORKSPACE/scripts/diy-part.sh
+        $GITHUB_WORKSPACE/scripts/diy-part.sh
         
 
     - name: Configuration Customization
