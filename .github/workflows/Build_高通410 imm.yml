@@ -174,28 +174,12 @@ jobs:
       uses: mxschmitt/action-tmate@master
       if: ${{ inputs.ssh || contains(github.event.action, 'ssh') }}
       
-      
-    - name: Config defconfig
-      id: config
-      run: |
-       cd openwrt
-       make defconfig
     - name: 查看 openwrt 目录
       run: ls -la openwrt/
       
            ls -l .config
       
            ls -la openwrt/.config
-
- 
-    - name: 自动上传最新源码生成.config编译配置
-      uses: actions/upload-artifact@main
-      with:
-       name: build-config
-       path: |
-         ${{ github.workspace }}/openwrt/.config
-         ${{ github.workspace }}/openwrt/feeds.conf.default
-       include-hidden-files: true
 
     - name: Cache dl
       id: cache-dl
@@ -230,8 +214,8 @@ jobs:
     - name: Cache ccache
       uses: actions/cache@v5
       with:
-        path: ~/.ccache
-        key: ccache-${{ runner.os }}-${{ hashFiles('openwrt/.config') }}
+        path: openwrt/.ccache
+        key: ccache-${{ runner.os }}-fixed
         restore-keys: |
           ccache-${{ runner.os }}-
 
@@ -248,13 +232,32 @@ jobs:
         restore-keys: |
           toolchain-${{ runner.os }}-
 
-    - name: Cache compiled ipk packages
+    - name: Cache build artifacts
       uses: actions/cache@v5
       with:
-        path: openwrt/bin/packages
-        key: ipk-${{ runner.os }}-${{ hashFiles('openwrt/.config') }}
+        path: |
+          openwrt/bin/packages
+          openwrt/build_dir/target-*
+          openwrt/staging_dir/target-*
+        key: build-${{ runner.os }}-fixed
         restore-keys: |
-          ipk-${{ runner.os }}-
+          build-${{ runner.os }}-
+          
+    - name: Config defconfig
+      id: config
+      run: |
+        cd openwrt
+        echo "CONFIG_CCACHE=y" >> .config
+        make defconfig
+        
+    - name: 自动上传最新源码生成.config编译配置
+      uses: actions/upload-artifact@main
+      with:
+       name: build-config
+       path: |
+         ${{ github.workspace }}/openwrt/.config
+         ${{ github.workspace }}/openwrt/feeds.conf.default
+       include-hidden-files: true
        
     - name: Compile the firmware
       id: compile
@@ -262,14 +265,14 @@ jobs:
         cd openwrt
         echo -e "$(nproc) thread compile"
 
-        export CCACHE_DIR=$HOME/.ccache
+        export CCACHE_DIR=$PWD/.ccache
         export CCACHE_MAXSIZE=10G
         export CCACHE_COMPILERCHECK=content
         export CCACHE_BASEDIR=$PWD
         mkdir -p $CCACHE_DIR
 
-        make -j$(nproc) CC="ccache gcc" CXX="ccache g++" 2>&1 | tee build.log || \
-        make -j1 V=s CC="ccache gcc" CXX="ccache g++" 2>&1 | tee build.log
+        make -j$(nproc) 2>&1 | tee build.log || \
+        make -j1 V=s 2>&1 | tee build.log
 
         echo "✅ ccache 统计："
         ccache -s
@@ -281,6 +284,7 @@ jobs:
         grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
         [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV
         echo "FILE_DATE=_$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
+
 
 
     - name: Check space usage
