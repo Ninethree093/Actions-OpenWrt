@@ -14,6 +14,12 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
+	aliases {
+		led-boot = &led_wlan;
+		led-failsafe = &led_wlan;
+		led-upgrade = &led_wlan;
+	};
+
 	keys {
 		compatible = "gpio-keys";
 
@@ -21,6 +27,17 @@
 			label = "reset";
 			gpios = <&gpio 38 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_wlan: wlan {
+			function = LED_FUNCTION_WLAN;
+			color = <LED_COLOR_ID_GREEN>;
+			gpios = <&gpio 44 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "phy0tpt";
 		};
 	};
 };
@@ -107,4 +124,8 @@
 	nvmem-cell-names = "eeprom";
 
 	country-code = <0x43>;
+};
+
+&leds {
+	status = "okay";
 };
