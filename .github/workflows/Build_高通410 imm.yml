@@ -231,9 +231,11 @@ jobs:
       uses: actions/cache@v5
       with:
         path: ~/.ccache
-        key: ccache-${{ runner.os }}-${{ hashFiles('openwrt/.config') }}
+        key: ccache-${{ runner.os }}-fixed
         restore-keys: |
+          ccache-${{ runner.os }}-0bab8242fb9c912612a0ffaa146a4e08da085709ee07e7b79865e2e061949dd0
           ccache-${{ runner.os }}-
+
 
 
     - name: Cache toolchain
