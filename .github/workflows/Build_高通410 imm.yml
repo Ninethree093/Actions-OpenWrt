@@ -3,8 +3,12 @@ name: Build_imm_高通410系列
 on:
   repository_dispatch:
   workflow_dispatch:
-    description: ' 工作流已开启 ccache 缓存加速，二次重复编译速度更快 '
     inputs:
+      info:
+        description: ' 工作流已开启 ccache 缓存加速，二次重复编译速度更快 '
+        required: false
+        default: '已启用'
+        type: string
       ssh:
         description: ' ← 选择是否开启 SSH 调试专业人员使用'
         required: false
@@ -29,6 +33,7 @@ on:
           - sp970v10
         default: jz02v10
         required: true
+
 
 
 on:
