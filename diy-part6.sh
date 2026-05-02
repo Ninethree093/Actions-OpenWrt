@@ -16,6 +16,9 @@ mkdir -p "target/linux/ramips/mt76x8/base-files/etc/board.d/"
 cp -f "$GITHUB_WORKSPACE/scripts/image/02_network" "target/linux/ramips/mt76x8/base-files/etc/board.d/02_network"
 
 
+# hlk7628dna (LEDs配置)
+mkdir -p "target/linux/ramips/mt76x8/base-files/etc/board.d/"
+cp -f "$GITHUB_WORKSPACE/scripts/image/01_leds" "target/linux/ramips/mt76x8/base-files/etc/board.d/01_leds"
 
 
 
