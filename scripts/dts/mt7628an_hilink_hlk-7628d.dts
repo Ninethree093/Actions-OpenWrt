@@ -14,12 +14,6 @@
 		bootargs = "console=ttyS0,57600";
 	};
 
-	aliases {
-		led-boot = &led_wlan;
-		led-failsafe = &led_wlan;
-		led-upgrade = &led_wlan;
-	};
-
 	keys {
 		compatible = "gpio-keys";
 
@@ -121,6 +115,5 @@
 
 	nvmem-cells = <&eeprom_factory_0>;
 	nvmem-cell-names = "eeprom";
-
-	country-code = <0x55>;
+	country-code = <0x43>;
 };

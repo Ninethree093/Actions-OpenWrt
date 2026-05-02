@@ -349,7 +349,7 @@ TARGET_DEVICES += hilink_hlk-7628n
 
 define Device/hilink_hlk-7628d
   IMAGE_SIZE := 32448k
-  DEVICE_VENDOR := HiLink
+  DEVICE_VENDOR := HILINK
   DEVICE_MODEL := HLK-7628D
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-ohci
 endef
