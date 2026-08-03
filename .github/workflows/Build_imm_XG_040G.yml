@@ -157,11 +157,17 @@ jobs:
        include-hidden-files: true
       
       
-    - name: Download package
+
+        
+        
+    - name: Download packages
       working-directory: ./openwrt
       run: |
-        make download -j8
-        find dl -size -1024c -delete
+         make download -j$(nproc) || make download -j1
+         find dl -type f -size 0 -delete
+         find dl -type f -name '*.part' -delete
+         du -sh dl
+
 
     - name: 查看 openwrt 目录
       run: ls -la openwrt/
