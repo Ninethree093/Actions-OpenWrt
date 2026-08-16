@@ -150,6 +150,8 @@ jobs:
          for d in nokia_xg-040g-md-ubi nokia_xg-040g-md nokia_xg-140g-md nokia_xg-040g-tf nokia_xg-140g-tf; do
            sed -i "s|^# CONFIG_TARGET_airoha_an7581_DEVICE_${d} is not set|CONFIG_TARGET_airoha_an7581_DEVICE_${d}=y|" .config
          done
+         sed -i 's/^CONFIG_TARGET_PROFILE=.*/CONFIG_TARGET_PROFILE=""/' .config
+         grep -E "MULTI_PROFILE|DEVICE_nokia|TARGET_PROFILE" .config
          grep -E "MULTI_PROFILE|DEVICE_nokia" .config
         
     - name: SSH 调试有效时间6h! 连接后输入q 输入exit即可退出，自动继续后续编译流程
