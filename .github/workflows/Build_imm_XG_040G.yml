@@ -136,7 +136,7 @@ jobs:
         $GITHUB_WORKSPACE/scripts/diy-part.sh
         
 
-    - name: Configuration Customization
+    - name: make defconfig
       run: |
       
         cp -fv "${CONFIG_FILE}" openwrt/.config
@@ -164,10 +164,6 @@ jobs:
          ${{ github.workspace }}/openwrt/.config
          ${{ github.workspace }}/openwrt/feeds.conf.default
        include-hidden-files: true
-      
-      
-
-        
         
     - name: Download packages
       working-directory: ./openwrt
