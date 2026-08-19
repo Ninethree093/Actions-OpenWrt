@@ -19,3 +19,6 @@ cp -f "$GITHUB_WORKSPACE/scripts/image/Makefile" "package/kernel/mt76/Makefile"
 # 北大源
 cp -r "$GITHUB_WORKSPACE/scripts/files-7628" "$GITHUB_WORKSPACE/openwrt/files"
 ls -R "$GITHUB_WORKSPACE/openwrt/files"
+
+# QModem
+echo "src-git qmodem https://github.com/FUjr/QModem.git;main" >> "$GITHUB_WORKSPACE/openwrt/feeds.conf.default"
