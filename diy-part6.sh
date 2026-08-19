@@ -26,3 +26,5 @@ cp -f "$GITHUB_WORKSPACE/scripts/image/01_leds" "target/linux/ramips/mt76x8/base
 cp -r "$GITHUB_WORKSPACE/scripts/files-7628" "$GITHUB_WORKSPACE/openwrt/files"
 ls -R "$GITHUB_WORKSPACE/openwrt/files"
 
+# QModem
+src-git qmodem https://github.com/FUjr/QModem.git;main
