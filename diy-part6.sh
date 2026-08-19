@@ -27,4 +27,4 @@ cp -r "$GITHUB_WORKSPACE/scripts/files-7628" "$GITHUB_WORKSPACE/openwrt/files"
 ls -R "$GITHUB_WORKSPACE/openwrt/files"
 
 # QModem
-src-git qmodem https://github.com/FUjr/QModem.git;main
+echo "src-git qmodem https://github.com/FUjr/QModem.git;main" >> openwrt/feeds.conf.default
