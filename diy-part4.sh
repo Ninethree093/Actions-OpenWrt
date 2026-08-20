@@ -13,7 +13,8 @@ git clone https://github.com/gSpotx2f/luci-app-cpu-perf package/luci-app-cpu-per
 # OpenClash
 git clone --depth 1 https://github.com/vernesong/OpenClash.git OpenClash
 
-
+# QModem
+echo "src-git qmodem https://github.com/FUjr/QModem.git;main" >> "$GITHUB_WORKSPACE/openwrt/feeds.conf.default"
 
 # luci-app-airoha-npu
 if [ ! -d "package/luci-app-airoha-npu" ]; then
