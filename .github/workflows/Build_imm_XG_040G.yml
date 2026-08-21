@@ -14,7 +14,8 @@ on:
         required: false
         default: false
         type: boolean
-       
+        
+
 env:
   FEEDS_CONF: feeds.conf.default
   DIY_P4_SH: diy-part4.sh
@@ -25,6 +26,10 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+       
     strategy:
       fail-fast: false
       matrix:
