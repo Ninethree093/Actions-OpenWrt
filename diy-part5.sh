@@ -7,6 +7,9 @@ sed -i 's/192.168.1.1/192.168.100.1/g' package/base-files/files/bin/config_gener
 # curl -sSL https://raw.githubusercontent.com/mufeng05/turboacc/main/add_turboacc.sh -o add_turboacc.sh && bash add_turboacc.sh
 curl -sSL https://raw.githubusercontent.com/chenmozhijin/turboacc/luci/add_turboacc.sh -o add_turboacc.sh && bash add_turboacc.sh
 
+# QModem
+echo "src-git qmodem https://github.com/FUjr/QModem.git;main" >> "$GITHUB_WORKSPACE/openwrt/feeds.conf.default"
+
 # hlk7620A dts
 mkdir -p target/linux/ramips/dts/
 cp -f "$GITHUB_WORKSPACE/scripts/mt7620/mt7620a_glinet_gl-mt750.dts" "target/linux/ramips/dts/mt7620a_glinet_gl-mt750.dts"
