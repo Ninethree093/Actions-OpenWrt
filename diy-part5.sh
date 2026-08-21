@@ -16,6 +16,8 @@ cp -f "$GITHUB_WORKSPACE/scripts/mt7620/mt7620a_glinet_gl-mt750.dts" "target/lin
 
 mkdir -p "target/linux/ramips/mt7620/base-files/etc/board.d/"
 cp -f "$GITHUB_WORKSPACE/scripts/mt7620/01_leds" "target/linux/ramips/mt7620/base-files/etc/board.d/01_leds"
+cp -f "$GITHUB_WORKSPACE/scripts/mt7620/02_network" "target/linux/ramips/mt7620/base-files/etc/board.d/02_network"
+
 
 # 北大源
 cp -r "$GITHUB_WORKSPACE/scripts/files-7620" "$GITHUB_WORKSPACE/openwrt/files"
