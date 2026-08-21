@@ -245,7 +245,7 @@ jobs:
         echo "release_name=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
         echo "🚀 ImmortalWrt firmware (贝尔光猫)" >> release.txt
         echo "----------------------" >> release.txt
-        echo "设备:" >> release.txt
+        echo "设备型号:" >> release.txt
         for x in ${{ env.ALL_DEVICES }}; do
          echo "  - $x" >> release.txt
         done
