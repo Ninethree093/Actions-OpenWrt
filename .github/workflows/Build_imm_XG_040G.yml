@@ -22,6 +22,8 @@ env:
   UPLOAD_FIRMWARE: true
   UPLOAD_RELEASE: true
   TZ: Asia/Shanghai
+  ALL_DEVICES: "nokia_xg-040g-md nokia_xg-040g-md-ubi nokia_xg-140g-md nokia_xg-040g-tf nokia_xg-140g-tf"
+
   
 jobs:
   build:
@@ -240,8 +242,8 @@ jobs:
         echo "🚀 ImmortalWrt firmware (贝尔光猫)" >> release.txt
         echo "----------------------" >> release.txt
         echo "设备:" >> release.txt
-        for x in ${{ join(strategy.matrix.device, ' ') }}; do
-          echo "  - $x" >> release.txt
+        for x in ${{ env.ALL_DEVICES }}; do
+         echo "  - $x" >> release.txt
         done
         echo "时间: $(date +"%Y-%m-%d %H:%M")" >> release.txt
         echo "内核版本: $(grep -h "kmod-usb2" ${{ env.FIRMWARE }}/*.manifest 2>/dev/null | awk -F' - ' '{print $2}' | grep -oP '[5-6]\.[0-9]+\.[0-9]+' | head -1 || echo '未知')" >> release.txt
