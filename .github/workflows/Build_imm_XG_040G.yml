@@ -236,10 +236,13 @@ jobs:
       if: env.UPLOAD_RELEASE == 'true' && steps.organize.outputs.status == 'success'
       run: |
         echo "release_tag=$(date +"%Y.%m.%d")" >> $GITHUB_OUTPUT
+        echo "release_name=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
         echo "🚀 ImmortalWrt firmware (贝尔光猫)" >> release.txt
         echo "----------------------" >> release.txt
         echo "设备:" >> release.txt
-        grep '^CONFIG_TARGET.*DEVICE.*=y' ${{ github.workspace }}/openwrt/.config | sed -r 's/.*DEVICE_(.*)=y/  - \1/' >> release.txt
+        for x in ${{ join(strategy.matrix.device, ' ') }}; do
+          echo "  - $x" >> release.txt
+        done
         echo "时间: $(date +"%Y-%m-%d %H:%M")" >> release.txt
         echo "内核版本: $(grep -h "kmod-usb2" ${{ env.FIRMWARE }}/*.manifest 2>/dev/null | awk -F' - ' '{print $2}' | grep -oP '[5-6]\.[0-9]+\.[0-9]+' | head -1 || echo '未知')" >> release.txt
         echo "源码仓库: ${{ env.REPO_URL }}" >> release.txt
@@ -270,6 +273,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag: ${{ steps.tag.outputs.release_tag }}
+        name: ${{ steps.tag.outputs.release_name }}
         bodyFile: release.txt
         artifacts: ${{ env.FIRMWARE }}/**/*
         artifactErrorsFailBuild: false
