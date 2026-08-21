@@ -241,8 +241,8 @@ jobs:
       id: tag
       if: env.UPLOAD_RELEASE == 'true' && steps.organize.outputs.status == 'success'
       run: |
-        echo "release_tag=$(date +%Y.%m.%d)-${{ github.run_number }}" >> $GITHUB_OUTPUT
-        echo "release_name=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
+        echo "release_tag=$(date +%Y.%m.%d-%H%M)-${{ github.run_number }}" >> $GITHUB_OUTPUT
+        echo "release_name=$(date +%Y.%m.%d-%H%M)" >> $GITHUB_OUTPUT
         echo "🚀 ImmortalWrt firmware (贝尔光猫)" >> release.txt
         echo "----------------------" >> release.txt
         echo "设备型号:" >> release.txt
