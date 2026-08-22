@@ -256,6 +256,8 @@ jobs:
         echo "管理地址: 192.168.10.1" >> release.txt
         echo "默认账号: root / 无密码" >> release.txt
         echo "" >> release.txt
+        echo "📌 bug反馈交流 QQ 群: 1020967055" >> release.txt
+        echo "" >> release.txt
         echo "### 主要插件" >> release.txt
         echo "#### luci-app 系列" >> release.txt
         grep -h "luci-app-" ${{ env.FIRMWARE }}/*.manifest 2>/dev/null | awk -F':' '{print $NF}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -oP 'luci-app-[a-zA-Z0-9_-]+' | sort -u | sed 's/^/- /' >> release.txt
