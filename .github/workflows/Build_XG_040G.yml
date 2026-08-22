@@ -277,6 +277,8 @@ jobs:
           echo "登录账号: root" >> release.txt
           echo "密码: 无" >> release.txt
           echo "" >> release.txt
+          echo "📌 bug反馈交流 QQ 群: 1020967055" >> release.txt
+          echo "" >> release.txt
           echo "### 主要插件" >> release.txt
           echo "#### luci-app 系列" >> release.txt
           grep -h "luci-app-" ${{ env.FIRMWARE }}/*.manifest 2>/dev/null | awk -F':' '{print $NF}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -oP 'luci-app-[a-zA-Z0-9_-]+' | sort -u | sed 's/^/- /' >> release.txt
