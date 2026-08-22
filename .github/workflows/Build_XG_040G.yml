@@ -265,7 +265,7 @@ jobs:
         if: env.UPLOAD_RELEASE == 'true' && !cancelled()
         run: |
           echo "release_tag=$(date +"%Y.%m.%d-%H%M%S")" >> $GITHUB_OUTPUT
-          echo "🚀 XG-040G-MD 固件构建测试" >> release.txt
+          echo "🚀 XG-040G-MD 补丁测试固件" >> release.txt
           echo "----------------------" >> release.txt
           echo "设备型号: XG-040G-MD" >> release.txt
           echo "构建时间: $(date +"%Y-%m-%d %H:%M")" >> release.txt
