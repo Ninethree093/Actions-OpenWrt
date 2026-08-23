@@ -129,12 +129,11 @@ jobs:
         $GITHUB_WORKSPACE/$DIY_P2_SH
         
         
-    - name: Check Skyhigh patch (fast, no compile)
+    - name: Prepare kernel & check Skyhigh patch
       run: |
-         cd openwrt/
-         git apply --check target/linux/*/patches-6.18/992-mtd-spinand-add-skyhigh-robust-read-workaround.patch \
-           && echo "::notice::Skyhigh patch applies OK on 6.18" \
-           || echo "::warning::Skyhigh patch FAILED to apply"
+        cd openwrt/
+        make target/linux/prepare V=s
+
 
         
     - name: SSH 调试有效时间6h!
