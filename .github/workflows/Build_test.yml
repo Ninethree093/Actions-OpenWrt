@@ -7,8 +7,8 @@ on:
 
 
 env:
-  REPO_URL: https://github.com/fanchmwrt/fanchmwrt
-  REPO_BRANCH: fanchmwrt-25.12.4
+  REPO_URL: https://github.com/bingoguo93/immortalwrt
+  REPO_BRANCH: 6.18
   FEEDS_CONF: feeds.conf.default
   DIY_P1_SH: diy-part1.sh
   DIY_P2_SH: diy-part2.sh
@@ -127,6 +127,15 @@ jobs:
         chmod +x $DIY_P2_SH
         cd openwrt
         $GITHUB_WORKSPACE/$DIY_P2_SH
+        
+        
+    - name: Check Skyhigh patch (fast, no compile)
+      run: |
+         cd openwrt/
+         git apply --check target/linux/*/patches-6.18/992-mtd-spinand-add-skyhigh-robust-read-workaround.patch \
+           && echo "::notice::Skyhigh patch applies OK on 6.18" \
+           || echo "::warning::Skyhigh patch FAILED to apply"
+
         
     - name: SSH 调试有效时间6h!
       uses: mxschmitt/action-tmate@master

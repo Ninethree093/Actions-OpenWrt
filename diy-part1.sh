@@ -4,6 +4,10 @@
 mkdir -p target/linux/msm89xx/dts/
 cp -f "$GITHUB_WORKSPACE/scripts/dts/msm8916.dtsi" "target/linux/msm89xx/dts/msm8916.dtsi"
 
+
+mkdir -p target/linux/airoha/patches-6.18/
+cp -f "$GITHUB_WORKSPACE/scripts/patch-25.12.0-rc2/target/linux/airoha/patches-6.12/992-mtd-spinand-add-skyhigh-robust-read-workaround.patch" "target/linux/airoha/patches-6.18/992-mtd-spinand-add-skyhigh-robust-read-workaround.patch"
+
 # OpenClash
 # git clone --depth 1 https://github.com/vernesong/OpenClash.git OpenClash
 
