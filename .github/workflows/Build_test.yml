@@ -139,6 +139,13 @@ jobs:
       run: |
         cd openwrt/
         make target/linux/prepare V=s
+        
+    - name: Show reject
+      if: always()
+      run: |
+        cd openwrt/
+        find build_dir -name 'core.c.rej' -exec cat {} \;
+
 
 
         
