@@ -278,7 +278,15 @@ jobs:
         echo "max_size = 10G" > $HOME/.ccache/ccache.conf
         echo "compiler_check = string:${{ steps.tc_hash.outputs.hash }}" >> $HOME/.ccache/ccache.conf
 
-       
+    - name: Test compile v2ray-core (full log)
+      continue-on-error: true
+      run: |
+        cd openwrt
+        make package/feeds/packages/v2ray-core/compile -j1 V=s 2>&1 | tee /tmp/v2ray.log
+      shell: bash
+
+
+    
     - name: make -j$(nproc)
       id: compile
       run: |
