@@ -242,9 +242,6 @@ jobs:
           done
         fi
       shell: bash
-
-
-
     
     - name: make -j$(nproc)
       id: compile
@@ -274,10 +271,6 @@ jobs:
         [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV
         echo "FILE_DATE=_$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
       shell: bash
-
-
-
-
 
     - name: df -hT
       if: (!cancelled())
@@ -323,10 +316,11 @@ jobs:
         for x in ${{ env.ALL_DEVICES }}; do
           echo "  - $x" >> release.txt
         done
+          echo ""
           echo "- 管理地址: 192.168.10.1"
-          echo "  内核版本: $(grep -h "kmod-usb2" ${{ env.FIRMWARE }}/*.manifest 2>/dev/null | awk -F' - ' '{print $2}' | grep -oP '[5-6]\.[0-9]+\.[0-9]+' | head -1 || echo '未知')"
           echo "  默认用户: root"
           echo "  默认密码: 空"
+          echo "  内核版本: $(grep -h "kmod-usb2" ${{ env.FIRMWARE }}/*.manifest 2>/dev/null | awk -F' - ' '{print $2}' | grep -oP '[5-6]\.[0-9]+\.[0-9]+' | head -1 || echo '未知')"
           echo ""
           echo "### 主要插件"
           echo "#### luci-app 系列"
