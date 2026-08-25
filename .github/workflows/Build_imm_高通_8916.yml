@@ -4,20 +4,40 @@ on:
   repository_dispatch:
   workflow_dispatch:
     inputs:
-      info:
-        description: ' 已开启 ccache cache-dl 缓存加速 '
-        required: false
-        default: '不改配置二次编译速度大幅提升'
-        type: string
       ssh:
         description: ' ← 选择是否开启 SSH 调试专业人员使用'
         required: false
         default: false
         type: boolean
-      profile:
-        description: ' ↓ 支持多款型号 手动选择要编译的机型 ↓ '
-        type: choice
-        options:
+      log_switch:
+        description: " ← 单线程编译 默认4线程"
+        required: false
+        default: false
+        type: boolean
+
+
+env:
+  ALL_DEVICES: "jz02v10 ufi001c ufi001b ufi103s qrzl903 w001 ufi003 uz801 mf32 mf601 wf2 sp970v11 sp970v10"
+  REPO_URL: https://github.com/xuxin1955/immortalwrt
+  REPO_BRANCH: master
+  FEEDS_CONF: feeds.conf.default
+  DIY_P1_SH: diy-part1.sh
+  DIY_P2_SH: diy-part2.sh
+  UPLOAD_BIN_DIR: false
+  UPLOAD_FIRMWARE: true
+  UPLOAD_RELEASE: true
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+       contents: write
+       
+    strategy:
+      fail-fast: false
+      matrix:
+        device:
           - jz02v10
           - ufi001c
           - ufi001b
@@ -31,28 +51,15 @@ on:
           - wf2
           - sp970v11
           - sp970v10
-        default: jz02v10
-        required: true
-
-
-env:
-  REPO_URL: https://github.com/xuxin1955/immortalwrt
-  REPO_BRANCH: master
-  FEEDS_CONF: feeds.conf.default
-  CONFIG_FILE: ${{ format('config/{0}.config', github.event.inputs.profile) }}
-  DIY_P1_SH: diy-part1.sh
-  DIY_P2_SH: diy-part2.sh
-  UPLOAD_BIN_DIR: false
-  UPLOAD_FIRMWARE: true
-  UPLOAD_RELEASE: true
-  TZ: Asia/Shanghai
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
     steps:
+   
     - name: Checkout
       uses: actions/checkout@main
+      
+    - name: 记录当前编译型号
+      run: |
+        echo "CONFIG_FILE=config/${{ matrix.device }}.config" >> $GITHUB_ENV
+
 
     - name: Show hardware info
       run: |
@@ -341,14 +348,19 @@ jobs:
       id: tag
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
       run: |
-        echo "release_tag=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
+        echo "release_tag=MSM8916-$(date +%Y.%m.%d)-V${{ github.run_number }}" >> $GITHUB_OUTPUT
+        echo "release_name=MSM8916-$(date +%Y.%m.%d-%H%M)" >> $GITHUB_OUTPUT
         touch release.txt
         if [ "${UPLOAD_GOFILE}" = "true" ] && [ -n "${{ steps.gofile.outputs.url }}" ]; then
           echo "🔗 GoFile" >> release.txt
         fi
         echo "" >> release.txt
         {
-          echo "## 高通8916系列 immortalwrt"
+        echo "## 高通8916系列 immortalwrt" >> release.txt
+        echo "### 编译机型:" >> release.txt
+        for x in ${{ env.ALL_DEVICES }}; do
+          echo "  - $x" >> release.txt
+        done
           echo "- 管理地址: 192.168.10.1"
           echo "  内核版本: $(grep -h "kmod-usb2" ${{ env.FIRMWARE }}/*.manifest 2>/dev/null | awk -F' - ' '{print $2}' | grep -oP '[5-6]\.[0-9]+\.[0-9]+' | head -1 || echo '未知')"
           echo "  默认用户: root"
@@ -378,12 +390,14 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag: ${{ steps.tag.outputs.release_tag }}
+        name: ${{ steps.tag.outputs.release_name }}
         bodyFile: release.txt
         artifacts: ${{ env.FIRMWARE }}/**/*
         artifactErrorsFailBuild: false
         allowUpdates: true
         draft: false
         prerelease: false
+
 
     - name: Delete old workflow runs via GitHub API
       if: always()
