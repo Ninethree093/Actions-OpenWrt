@@ -291,6 +291,15 @@ jobs:
         rm -rf packages
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
+        
+    - name: Prefix common
+      if: steps.organize.outputs.status == 'success'
+      run: |
+        cd ${{ env.FIRMWARE }}
+        for f in config.buildinfo feeds.buildinfo profiles.json sha256sums version.buildinfo; do
+          [ -f "$f" ] && mv "$f" "${{ matrix.device }}-$f"
+        done
+      shell: bash
 
     - name: Upload firmware directory
       uses: actions/upload-artifact@main
