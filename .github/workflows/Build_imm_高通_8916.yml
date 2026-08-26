@@ -325,8 +325,8 @@ jobs:
         for x in ${{ env.ALL_DEVICES }}; do
           echo "  - $x" >> release.txt
         done
-          echo "时间: $(date +"%Y-%m-%d %H:%M")" >> release.txt
           echo ""
+          echo "时间: $(date +"%Y-%m-%d %H:%M")" >> release.txt
           echo "- 管理地址: 192.168.10.1"
           echo "  默认用户: root"
           echo "  默认密码: 空"
