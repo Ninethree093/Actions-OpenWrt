@@ -3,8 +3,6 @@
 
 # Modify default IP
 sed -i 's/192.168.1.1/192.168.10.1/g' package/base-files/files/bin/config_generate
-sed -i '178i\            [ "$1" = "lan" ] \&\& uci add_list network.$1.ipaddr='"'"'192.168.5.1/24'"'"'\
-            [ "$1" = "lan" ] \&\& uci add_list network.$1.ipaddr='"'"'192.168.8.1/24'"'"'' package/base-files/files/bin/config_generate
 
 # eth0
 sed -i "s/ucidef_set_interface_lan 'eth0'/ucidef_set_interface_lan 'br-lan'/" package/base-files/files/etc/board.d/99-default_network
