@@ -197,16 +197,19 @@ jobs:
     - name: Setup ccache
       run: |
        mkdir -p /mnt/openwrt/.ccache
+       export CCACHE_DIR=/mnt/openwrt/.ccache
+       export CCACHE_BASEDIR=/mnt/openwrt
+       export CCACHE_NOHASHDIR=true
        echo "CCACHE_DIR=/mnt/openwrt/.ccache" >> "$GITHUB_ENV"
        echo "CCACHE_BASEDIR=/mnt/openwrt" >> "$GITHUB_ENV"
        echo "CCACHE_NOHASHDIR=true" >> "$GITHUB_ENV"
-       ccache --set-config=cache_dir=/mnt/openwrt/.ccache
-       ccache --set-config=max_size=7G
-       ccache --set-config=compression=true
-       ccache --set-config=compression_level=1
-       ccache --set-config=inode_cache=false
-       ccache --set-config=sloppiness=file_stat_matches,include_file_ctime,include_file_mtime,time_macros,pch_defines
-       ccache --show-config
+       ccache -M 7G
+       ccache -o compression=true
+       ccache -o compression_level=1
+       ccache -o inode_cache=false
+       ccache -o compiler_check=content
+       ccache -o sloppiness=file_stat_matches,include_file_ctime,include_file_mtime,time_macros,pch_defines
+       ccache -p | grep -E "max_size|cache_dir"
  
              
     - name: 查看 openwrt 目录
