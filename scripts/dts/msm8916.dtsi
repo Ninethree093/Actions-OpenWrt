@@ -248,53 +248,33 @@
 
 		opp-200000000 {
 			opp-hz = /bits/ 64 <200000000>;
-			opp-microvolt = <1050000>;
-			clock-latency-ns = <200000>;
 		};
 		opp-400000000 {
 			opp-hz = /bits/ 64 <400000000>;
-			opp-microvolt = <1050000>;
-			clock-latency-ns = <200000>;
 		};
 		opp-800000000 {
 			opp-hz = /bits/ 64 <800000000>;
-			opp-microvolt = <1100000>;
-			clock-latency-ns = <200000>;
 		};
 		opp-998400000 {
 			opp-hz = /bits/ 64 <998400000>;
-			opp-microvolt = <1150000>;
-			clock-latency-ns = <200000>;
 		};
 		opp-1094400000 {
 			opp-hz = /bits/ 64 <1094400000>;
-			opp-microvolt = <1200000>;
-			clock-latency-ns = <200000>;
 		};
 		opp-1152000000 {
 			opp-hz = /bits/ 64 <1152000000>;
-			opp-microvolt = <1225000>;
-			clock-latency-ns = <200000>;
 		};
 		opp-1209600000 {
 			opp-hz = /bits/ 64 <1209600000>;
-			opp-microvolt = <1250000>;
-			clock-latency-ns = <200000>;
 		};
 		opp-1248000000 {
 			opp-hz = /bits/ 64 <1248000000>;
-			opp-microvolt = <1280000>;
-			clock-latency-ns = <200000>;
 		};
 		opp-1363200000 {
 			opp-hz = /bits/ 64 <1363200000>;
-			opp-microvolt = <1320000>;
-			clock-latency-ns = <200000>;
 		};
 		opp-1401600000 {
 			opp-hz = /bits/ 64 <1401600000>;
-			opp-microvolt = <1350000>;
-			clock-latency-ns = <200000>;
 		};
 	};
 

@@ -186,23 +186,27 @@ jobs:
         cd openwrt
         make defconfig V=s
         
-        
     - name: Cache ccache
       uses: actions/cache@v5
       with:
         path: /mnt/openwrt/.ccache
-        key: ccache-msm8916-stable
+        key: ccache-msm8916-${{ github.run_id }}
         restore-keys: |
           ccache-msm8916-
 
     - name: Setup ccache
       run: |
-        mkdir -p /mnt/openwrt/.ccache
-        echo "CCACHE_DIR=/mnt/openwrt/.ccache" >> "$GITHUB_ENV"
-        ccache --set-config=cache_dir=/mnt/openwrt/.ccache
-        ccache --set-config=max_size=4G
-        ccache --set-config=compression=true
-        ccache --show-config
+       mkdir -p /mnt/openwrt/.ccache
+       echo "CCACHE_DIR=/mnt/openwrt/.ccache" >> "$GITHUB_ENV"
+       echo "CCACHE_BASEDIR=/mnt/openwrt" >> "$GITHUB_ENV"
+       echo "CCACHE_NOHASHDIR=true" >> "$GITHUB_ENV"
+       ccache --set-config=cache_dir=/mnt/openwrt/.ccache
+       ccache --set-config=max_size=7G
+       ccache --set-config=compression=true
+       ccache --set-config=compression_level=1
+       ccache --set-config=inode_cache=false
+       ccache --set-config=sloppiness=file_stat_matches,include_file_ctime,include_file_mtime,time_macros,pch_defines
+       ccache --show-config
  
              
     - name: 查看 openwrt 目录
