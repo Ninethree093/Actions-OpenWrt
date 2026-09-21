@@ -203,7 +203,7 @@ jobs:
        echo "CCACHE_DIR=/mnt/openwrt/.ccache" >> "$GITHUB_ENV"
        echo "CCACHE_BASEDIR=/mnt/openwrt" >> "$GITHUB_ENV"
        echo "CCACHE_NOHASHDIR=true" >> "$GITHUB_ENV"
-       ccache -M 7G
+       ccache -M 10G
        ccache -o compression=true
        ccache -o compression_level=1
        ccache -o inode_cache=false
