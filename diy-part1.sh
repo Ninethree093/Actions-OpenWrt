@@ -1,9 +1,12 @@
 #!/bin/bash
 
-# 8916dts
-mkdir -p target/linux/msm89xx/dts/
-cp -f "$GITHUB_WORKSPACE/scripts/dts/msm8916.dtsi" "target/linux/msm89xx/dts/msm8916.dtsi"
-cp -f "$GITHUB_WORKSPACE/scripts/dts/msm8916-ufi.dtsi" "target/linux/msm89xx/dts/msm8916-ufi.dtsi"
+# msm8916
+cp -rf "$GITHUB_WORKSPACE/scripts/msm89xx/target/." target/
+cp -rf "$GITHUB_WORKSPACE/scripts/msm89xx/package/." package/
+cp -rf "$GITHUB_WORKSPACE/scripts/msm89xx/toolchain/." toolchain/
+cp -rf "$GITHUB_WORKSPACE/scripts/msm89xx/feeds.conf.default" feeds.conf.default
+# 验证
+ls target/linux/msm89xx/Makefile package/kernel/mac80211/patches/ath/*wcn36xx* package/kernel/mac80211/ath.mk toolchain/musl/include/sys/glibc-types.h
 
 # OpenAppFilter
 git clone --depth 1 https://github.com/destan19/luci-app-harbor-file.git package/harbor-file
