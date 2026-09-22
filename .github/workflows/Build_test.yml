@@ -154,3 +154,7 @@ jobs:
       run: |
         echo "config 已上传，结束"
         exit 0
+        
+    - name: SSH 调试有效时间6h!
+      uses: WarpBuilds/action-debugger@master
+     
