@@ -7,12 +7,12 @@ on:
 
 
 env:
-  CONFIG_FILE: 'config/gemini.config'
-  REPO_URL: https://github.com/xuxin1955/immortalwrt
-  REPO_BRANCH: main
+  CONFIG_FILE: 'config/jz02v10.config'
+  REPO_URL: https://github.com/immortalwrt/immortalwrt
+  REPO_BRANCH: master
   FEEDS_CONF: feeds.conf.default
-  DIY_P8_SH: diy-part8.sh
-  DIY_P7_SH: diy-part7.sh
+  DIY_P1_SH: diy-part1.sh
+  DIY_P2_SH: diy-part2.sh
   UPLOAD_FIRMWARE: true
   UPLOAD_RELEASE: true
   TZ: Asia/Shanghai
@@ -104,12 +104,12 @@ jobs:
         ln -sfn /mnt/openwrt/build_dir openwrt/build_dir
         df -H
         
-    - name: Load custom DIY_P8_SH
+    - name: Load custom DIY_P1_SH
       run: |
         [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
-        chmod +x $DIY_P8_SH
+        chmod +x $DIY_P1_SH
         cd openwrt
-        $GITHUB_WORKSPACE/$DIY_P8_SH
+        $GITHUB_WORKSPACE/$DIY_P1_SH
         
 
     - name: Update & Install feeds
@@ -125,12 +125,12 @@ jobs:
         $GITHUB_WORKSPACE/scripts/diy-part.sh
         
         
-    - name: Load custom DIY_P7_SH
+    - name: Load custom DIY_P2_SH
       run: |
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
-        chmod +x $DIY_P7_SH
+        chmod +x $DIY_P2_SH
         cd openwrt
-        $GITHUB_WORKSPACE/$DIY_P7_SH
+        $GITHUB_WORKSPACE/$DIY_P2_SH
     
     - name: make defconfig
       run: |
