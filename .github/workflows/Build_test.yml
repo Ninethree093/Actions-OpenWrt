@@ -9,7 +9,7 @@ on:
 env:
   CONFIG_FILE: 'config/jz02v10.config'
   REPO_URL: https://github.com/xuxin1955/immortalwrt
-  REPO_BRANCH: master
+  REPO_BRANCH: main
   FEEDS_CONF: feeds.conf.default
   DIY_P1_SH: diy-part1.sh
   DIY_P2_SH: diy-part2.sh
@@ -151,14 +151,6 @@ jobs:
          ${{ github.workspace }}/openwrt/.config
          ${{ github.workspace }}/openwrt/feeds.conf.default
        include-hidden-files: true    
-
-    - name: make -j$(nproc)
-      id: compile
-      run: |
-        cd openwrt
-        make tools/install
-        make toolchain/install
-        make package/simadmin/compile V=s
 
       
     - name: 上传完成，结束 job
