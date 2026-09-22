@@ -7,7 +7,7 @@ on:
 
 
 env:
-  CONFIG_FILE: 'config/jz02v10.config'
+  CONFIG_FILE: 'config/test.config'
   REPO_URL: https://github.com/immortalwrt/immortalwrt
   REPO_BRANCH: master
   FEEDS_CONF: feeds.conf.default
