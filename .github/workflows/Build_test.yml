@@ -7,6 +7,7 @@ on:
 
 
 env:
+  CONFIG_FILE: 'config/gemini.config'
   REPO_URL: https://github.com/xuxin1955/immortalwrt
   REPO_BRANCH: main
   FEEDS_CONF: feeds.conf.default
@@ -126,11 +127,16 @@ jobs:
         
     - name: Load custom DIY_P2_SH
       run: |
+        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
         chmod +x $DIY_P2_SH
         cd openwrt
         $GITHUB_WORKSPACE/$DIY_P2_SH
     
-
+    - name: make defconfig
+      run: |
+        cd openwrt
+        make defconfig V=s
+        
     - name: SSH 调试有效时间6h!
       uses: WarpBuilds/action-debugger@master
       
