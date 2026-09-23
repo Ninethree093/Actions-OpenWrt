@@ -18,7 +18,7 @@ on:
 
 env:
   ALL_DEVICES: "jz02v10 ufi001c ufi001b ufi103s qrzl903 w001 ufi003 uz801 mf32 mf601 wf2 sp970v11 sp970v10"
-  REPO_URL: https://github.com/immortalwrt/immortalwrt
+  REPO_URL: https://github.com/xuxin1955/immortalwrt
   REPO_BRANCH: master
   FEEDS_CONF: feeds.conf.default
   DIY_P1_SH: diy-part1.sh
