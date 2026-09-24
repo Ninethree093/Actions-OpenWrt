@@ -1,71 +1,69 @@
 #!/usr/bin/env python3
 import re
-import sys
 
-ALL_DEVICES = [
-    'ufi001c', 'ufi001b', 'ufi103s', 'qrzl903', 'w001', 'ufi003',
-    'uz801', 'mf32', 'mf601', 'wf2', 'jz02v10', 'sp970v11', 'sp970v10'
+SKIP = {'tweaks'}
+
+DEFAULT_TMPL = [
+    'CONFIG_DEFAULT_qcom-msm8916-modem-openstick-{dev}-firmware',
+    'CONFIG_DEFAULT_qcom-msm8916-openstick-{dev}-wcnss-firmware',
+    'CONFIG_DEFAULT_qcom-msm8916-wcnss-openstick-{dev}-nv',
 ]
 
-def main(target_dev):
-    input_file = '.config'
-    output_file = f'{target_dev}.config'
+def extract_dev(s):
+    m = re.search(r'openstick-([a-zA-Z0-9]+)', s)
+    return m.group(1) if m else None
 
-    with open(input_file, 'r') as f:
-        lines = f.readlines()
+def main(input_file='.config'):
+    with open(input_file) as f:
+        src = f.readlines()
 
-    final_lines = []
+    devices = sorted(set(
+        d for d in (extract_dev(ln) for ln in src if 'openstick-' in ln)
+        if d and d not in SKIP
+    ))
+    print('扫描到设备:', devices)
 
-    for ln in lines:
-        stripped = ln.strip()
+    for target in devices:
+        out = []
+        for ln in src:
+            s = ln.strip()
 
-        # 1. DEVICE 行
-        m_dev = re.match(r'(# )?CONFIG_TARGET_msm89xx_msm8916_DEVICE_openstick-([a-zA-Z0-9]+)(.*)', stripped)
-        if m_dev:
-            dev = m_dev.group(2)
-            if dev == target_dev:
-                final_lines.append(f'CONFIG_TARGET_msm89xx_msm8916_DEVICE_openstick-{dev}=y\n')
-            else:
-                final_lines.append(f'# CONFIG_TARGET_msm89xx_msm8916_DEVICE_openstick-{dev} is not set\n')
-            continue
-
-        # 2. PROFILE
-        if 'CONFIG_TARGET_PROFILE=' in ln:
-            final_lines.append(f'CONFIG_TARGET_PROFILE="DEVICE_openstick-{target_dev}"\n')
-            continue
-
-        # 3. PACKAGE / DEFAULT 行（只处理 jz02v10）
-        if ('CONFIG_PACKAGE_qcom-msm8916' in ln or 'CONFIG_DEFAULT_qcom-msm8916' in ln) and 'openstick-jz02v10' in ln:
-            new_ln = ln.replace('openstick-jz02v10', f'openstick-{target_dev}')
-            new_ln = re.sub(r'# CONFIG_', 'CONFIG_', new_ln)
-            new_ln = re.sub(r' is not set', '=y', new_ln)
-            final_lines.append(new_ln)
-            continue
-
-        # 4. 其他 PACKAGE / DEFAULT 行（包含 openstick-设备名）
-        if ('CONFIG_PACKAGE_qcom-msm8916' in ln or 'CONFIG_DEFAULT_qcom-msm8916' in ln) and 'openstick-' in ln:
-            # 如果这行包含目标设备，但它是 is not set，说明是原文里的，直接跳过
-            if f'openstick-{target_dev}' in ln and 'is not set' in ln:
+            m_dev = re.match(r'(# )?CONFIG_TARGET_msm89xx_msm8916_DEVICE_openstick-([a-zA-Z0-9]+)', s)
+            if m_dev:
+                dev = m_dev.group(2)
+                out.append('CONFIG_TARGET_msm89xx_msm8916_DEVICE_openstick-%s=y\n' % dev
+                           if dev == target else
+                           '# CONFIG_TARGET_msm89xx_msm8916_DEVICE_openstick-%s is not set\n' % dev)
                 continue
-            # 其他设备的，保持原样（已经是 is not set）
-            # 但如果是目标设备且是 =y，也保持原样（原文可能有）
-            # 简单处理：原样保留
-            final_lines.append(ln)
-            continue
 
-        # 其余原样保留
-        final_lines.append(ln)
+            if s.startswith('CONFIG_TARGET_PROFILE='):
+                out.append('CONFIG_TARGET_PROFILE="DEVICE_openstick-%s"\n' % target)
+                continue
 
-    with open(output_file, 'w') as f:
-        f.writelines(final_lines)
+            # DEFAULT 固件行：凡是属于某机型的 DEFAULT 模板行，跳过，后面统一按 target 重写
+            m_def = re.match(r'#?\s*(CONFIG_DEFAULT_qcom-msm8916-[^\s=]+)', s)
+            if m_def and 'openstick-' in s and any(t.split('{dev}')[0] in s for t in DEFAULT_TMPL):
+                continue
 
-    print(f'完成: {target_dev} -> {output_file}')
+            # PACKAGE 固件行：名字不动，目标开、其他关
+            m_fw = re.match(r'#?\s*(CONFIG_PACKAGE_qcom-msm8916-[^\s=]+)', s)
+            if m_fw and 'openstick-' in s:
+                name = m_fw.group(1).split('=')[0].split(' is not set')[0].strip()
+                dev = extract_dev(name)
+                out.append('%s=y\n' % name if dev == target else '# %s is not set\n' % name)
+                continue
+
+            out.append(ln)
+
+        # 在同位置补上 target 自己的 DEFAULT 三行（插在 rmtfs 前，位置贴近原 DEFAULT 段）
+        at = next((i for i, l in enumerate(out) if l.strip().startswith('CONFIG_DEFAULT_rmtfs')), len(out))
+        out[at:at] = ['%s=y\n' % t.format(dev=target) for t in DEFAULT_TMPL]
+
+        with open('%s.config' % target, 'w') as f:
+            f.writelines(out)
+        print('  生成:', target + '.config')
+
+    print('全部完成，共 %d 个' % len(devices))
 
 if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        main(sys.argv[1])
-    else:
-        print(f'识别到型号: {ALL_DEVICES}')
-        for dev in ALL_DEVICES:
-            print(f'\n==== 处理: {dev} ====')
-            main(dev)
+    main()
