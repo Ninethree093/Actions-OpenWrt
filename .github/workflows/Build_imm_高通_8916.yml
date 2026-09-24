@@ -18,7 +18,7 @@ on:
 
 env:
   ALL_DEVICES: "jz02v10 ufi001c ufi001b ufi103s qrzl903 w001 ufi003 uz801 mf32 mf601 wf2 sp970v11 sp970v10"
-  REPO_URL: https://github.com/xuxin1955/immortalwrt
+  REPO_URL: https://github.com/immortalwrt/immortalwrt
   REPO_BRANCH: master
   FEEDS_CONF: feeds.conf.default
   DIY_P1_SH: diy-part1.sh
@@ -135,6 +135,8 @@ jobs:
         df -hT $PWD
         git clone $REPO_URL -b $REPO_BRANCH openwrt
         ln -sf /mnt/openwrt $GITHUB_WORKSPACE/openwrt
+        echo "===== 源码最近更新 (最后 10 条) ====="
+        git -C /mnt/openwrt log -10 --oneline --no-merges
 
     - name: Load custom DIY_P1_SH
       run: |
