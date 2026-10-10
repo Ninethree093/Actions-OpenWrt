@@ -1,6 +1,8 @@
 name: Build_imm_高通_8916
 
 on:
+  schedule:
+   - cron: '0 17 * * 6'
   repository_dispatch:
   workflow_dispatch:
     inputs:
