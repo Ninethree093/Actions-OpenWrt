@@ -10,7 +10,7 @@ env:
   REPO_URL: https://github.com/istoreos/istoreos
   REPO_BRANCH: istoreos-25.12
   FEEDS_CONF: feeds.conf.default
-  DIY_P1_SH: diy-part1.sh
+  DIY_P0_SH: diy-part0.sh
   DIY_P2_SH: diy-part2.sh
   UPLOAD_FIRMWARE: true
   UPLOAD_RELEASE: true
@@ -103,12 +103,12 @@ jobs:
         ln -sfn /mnt/openwrt/build_dir openwrt/build_dir
         df -H
         
-    - name: Load custom DIY_P1_SH
+    - name: Load custom DIY_P0_SH
       run: |
         [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
-        chmod +x $DIY_P1_SH
+        chmod +x $DIY_P0_SH
         cd openwrt
-        $GITHUB_WORKSPACE/$DIY_P1_SH
+        $GITHUB_WORKSPACE/$DIY_P0_SH
         
 
     - name: Update & Install feeds
