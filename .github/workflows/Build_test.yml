@@ -7,9 +7,8 @@ on:
 
 
 env:
-  CONFIG_FILE: 'config/jz02v10.config'
-  REPO_URL: https://github.com/immortalwrt/immortalwrt
-  REPO_BRANCH: master
+  REPO_URL: https://github.com/istoreos/istoreos
+  REPO_BRANCH: istoreos-25.12
   FEEDS_CONF: feeds.conf.default
   DIY_P1_SH: diy-part1.sh
   DIY_P2_SH: diy-part2.sh
@@ -127,15 +126,10 @@ jobs:
         
     - name: Load custom DIY_P2_SH
       run: |
-        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+
         chmod +x $DIY_P2_SH
         cd openwrt
         $GITHUB_WORKSPACE/$DIY_P2_SH
-    
-    - name: make defconfig
-      run: |
-        cd openwrt
-        make defconfig V=s
         
         
     - name: SSH 调试有效时间6h!
