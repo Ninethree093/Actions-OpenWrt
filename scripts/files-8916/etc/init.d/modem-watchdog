@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+START=99
+USE_PROCD=1
+
+start_service() {
+    procd_open_instance
+    procd_set_param command /bin/sh -c '
+        while true; do
+            if ! ifstatus modem | grep -q "\"up\": true"; then
+                SIM_PATH=$(mmcli -m any --output-keyvalue 2>/dev/null | sed -n "s/^modem.generic.sim *: *//p")
+                if [ -n "$SIM_PATH" ]; then
+                    logger -t "modem-watchdog" "Interface modem is down, restarting..."
+                    ifup modem
+                fi
+            fi
+            sleep 15
+        done
+    '
+    procd_set_param respawn
+    procd_close_instance
+}
