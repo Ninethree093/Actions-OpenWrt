@@ -7,11 +7,13 @@ start_service() {
     procd_set_param command /bin/sh -c '
         while true; do
             if ! ifstatus modem | grep -q "\"up\": true"; then
+                STATE=$(mmcli -m any 2>/dev/null | sed -n "s/.*state: *\([a-z-]*\).*/\1/p" | head -1)
+                [ "$STATE" = "disabled" ] && mmcli -m any --enable
                 SIM_PATH=$(mmcli -m any --output-keyvalue 2>/dev/null | sed -n "s/^modem.generic.sim *: *//p")
-                if [ -n "$SIM_PATH" ]; then
+                [ -n "$SIM_PATH" ] && {
                     logger -t "modem-watchdog" "Interface modem is down, restarting..."
                     ifup modem
-                fi
+                }
             fi
             sleep 15
         done

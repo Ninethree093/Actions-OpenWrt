@@ -1,0 +1,4 @@
+#!/bin/sh
+chmod +x /etc/init.d/modem-watchdog
+/etc/init.d/modem-watchdog enable
+exit 0
