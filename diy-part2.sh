@@ -18,12 +18,10 @@ cp -r "$GITHUB_WORKSPACE/scripts/files-8916" "$GITHUB_WORKSPACE/openwrt/files"
 ls -R "$GITHUB_WORKSPACE/openwrt/files"
 
 
-# 补丁应用+inode判断
+# 压制 GCC 14 类型错误
+pwd
+ls package/libs/libnftnl/Makefile
+sed -i '/^TARGET_CFLAGS += \$(FPIC)/a TARGET_CFLAGS += -Wno-error=incompatible-pointer-types' package/libs/libnftnl/Makefile
 
-BEFORE_LIST=$(find target/linux/generic/pending-6.18 package/libs/libnftnl feeds/luci/applications/luci-app-firewall -type f 2>/dev/null | sort | md5sum)
-
-curl -sSL https://raw.githubusercontent.com/mufeng05/openwrt-sonic-fullcone/master/add_sonic_fullcone.sh | bash
-
-AFTER_LIST=$(find target/linux/generic/pending-6.18 package/libs/libnftnl feeds/luci/applications/luci-app-firewall -type f 2>/dev/null | sort | md5sum)
-
-[ "$BEFORE_LIST" != "$AFTER_LIST" ] && echo "✓ 补丁已应用" || echo "✗ 补丁未应用"
+# 验证
+grep -n "Wno-error=incompatible-pointer-types" package/libs/libnftnl/Makefile && echo "✓ 修复已应用" || echo "✗ 修复失败"
