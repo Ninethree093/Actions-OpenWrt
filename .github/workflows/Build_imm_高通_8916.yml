@@ -254,6 +254,13 @@ jobs:
           echo "$output" | grep -iE "Hash verification failed|checksum mismatch|ERROR"
         fi
       shell: bash
+      
+      
+     - name: 补丁应用预检
+       run: |
+         cd openwrt
+         bash $GITHUB_WORKSPACE/check-patches.sh
+
     
     - name: make -j$(nproc)
       id: compile
