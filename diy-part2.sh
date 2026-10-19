@@ -26,3 +26,17 @@ sed -i '/^TARGET_CFLAGS += \$(FPIC)/a TARGET_CFLAGS += -Wno-error=incompatible-p
 # 验证
 grep -n "Wno-error=incompatible-pointer-types" package/libs/libnftnl/Makefile && echo "✓ 修复已应用" || echo "✗ 修复失败"
 
+[ -f include/toplevel.mk ] || cd "$GITHUB_WORKSPACE/openwrt" || exit 1
+patch -p1 --fuzz=2 <<'EOF'
+--- a/include/image.mk
++++ b/include/image.mk
+@@ -192,7 +192,6 @@
+   -Wno-unit_address_vs_reg \
+   -Wno-avoid_unnecessary_addr_size \
+   -Wno-alias_paths \
+-  -Wno-graph_child_address \
+   -Wno-simple_bus_reg
+ 
+ DTC_FLAGS += $(DTC_WARN_FLAGS)
+EOF
+grep -q 'graph_child_address' include/image.mk && echo "FAIL: image.mk 未修复" || echo "OK: image.mk DTC 参数已修复"
