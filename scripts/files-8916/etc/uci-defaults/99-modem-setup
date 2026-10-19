@@ -1,10 +1,6 @@
 #!/bin/sh
-chmod +x /etc/init.d/modem-watchdog
-/etc/init.d/modem-watchdog enable
 chmod +x /etc/init.d/auto-apn
 /etc/init.d/auto-apn enable
-chmod +x /etc/init.d/sta_wifi
-/etc/init.d/sta_wifi enable
 chmod +x /etc/init.d/swapfile
 /etc/init.d/swapfile enable
 exit 0
