@@ -14,6 +14,7 @@ if [ -z "$OPENWRT_DIR" ] || [ ! -f "$OPENWRT_DIR/package/kernel/mac80211/Makefil
 	echo "::error::openwrt tree not found" >&2
 	exit 2
 fi
+OPENWRT_DIR=$(cd "$OPENWRT_DIR" && pwd) || exit 2
 MK="$OPENWRT_DIR/package/kernel/mac80211/Makefile"
 
 PKG_VER=$(sed -n 's/^PKG_SOURCE_VERSION:= *//p' "$MK" | head -1)
