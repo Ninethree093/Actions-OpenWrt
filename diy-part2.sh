@@ -25,3 +25,12 @@ sed -i '/^TARGET_CFLAGS += \$(FPIC)/a TARGET_CFLAGS += -Wno-error=incompatible-p
 
 # 验证
 grep -n "Wno-error=incompatible-pointer-types" package/libs/libnftnl/Makefile && echo "✓ 修复已应用" || echo "✗ 修复失败"
+
+
+
+[ -f include/toplevel.mk ] || cd "$GITHUB_WORKSPACE/openwrt" || exit 1
+grep -rlE '^[[:space:]]*PKG_VERSION[[:space:]]*[:?]?=.*_(rc|alpha|beta|pre|git|svn|cvs|hg|p[0-9])' package feeds --include=Makefile 2>/dev/null | while read -r mk; do
+    pv=$(sed -nE 's/^[[:space:]]*PKG_VERSION[[:space:]]*[:?]?=[[:space:]]*//p' "$mk" | head -n1)
+    sed -i -E 's/^(PKG_VERSION[[:space:]]*[:?]?=[[:space:]]*[0-9][0-9.]*)_[a-z]+[0-9]*/\1/' "$mk"
+    echo "[apk-ver-fixed] $mk"
+done
