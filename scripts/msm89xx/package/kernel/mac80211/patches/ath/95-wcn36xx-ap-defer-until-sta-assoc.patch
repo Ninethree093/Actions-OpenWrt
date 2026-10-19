@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/ath/wcn36xx/main.c
 +++ b/drivers/net/wireless/ath/wcn36xx/main.c
-@@ -824,6 +824,103 @@
+@@ -828,6 +828,103 @@ void wcn36xx_set_default_rates_v1(struct
  	rates->vht_tx_mcs_map = IEEE80211_VHT_MCS_SUPPORT_0_9;
  }
  
@@ -104,7 +104,7 @@
  static void wcn36xx_bss_info_changed(struct ieee80211_hw *hw,
  				     struct ieee80211_vif *vif,
  				     struct ieee80211_bss_conf *bss_conf,
-@@ -831,8 +928,6 @@
+@@ -835,8 +932,6 @@ static void wcn36xx_bss_info_changed(str
  {
  	struct wcn36xx *wcn = hw->priv;
  	struct sk_buff *skb = NULL;
@@ -113,7 +113,7 @@
  	struct wcn36xx_vif *vif_priv = wcn36xx_vif_to_priv(vif);
  
  	wcn36xx_dbg(WCN36XX_DBG_MAC, "mac bss info changed vif %p changed 0x%llx\n",
-@@ -927,6 +1022,12 @@
+@@ -931,6 +1026,12 @@ static void wcn36xx_bss_info_changed(str
  			if (vif->type == NL80211_IFTYPE_STATION)
  				wcn36xx_smd_add_beacon_filter(wcn, vif);
  			wcn36xx_enable_keep_alive_null_packet(wcn, vif);
@@ -126,7 +126,7 @@
  		} else {
  			wcn36xx_dbg(WCN36XX_DBG_MAC,
  				    "disassociated bss %pM vif %pM AID=%d\n",
-@@ -960,28 +1061,21 @@
+@@ -964,28 +1065,21 @@ static void wcn36xx_bss_info_changed(str
  			    bss_conf->enable_beacon);
  
  		if (bss_conf->enable_beacon) {
@@ -166,7 +166,7 @@
  			wcn36xx_smd_delete_bss(wcn, vif);
  			wcn36xx_smd_set_link_st(wcn, vif->addr, vif->addr,
  						WCN36XX_HAL_LINK_IDLE_STATE);
-@@ -1018,6 +1112,10 @@
+@@ -1022,6 +1116,10 @@ static void wcn36xx_remove_interface(str
  	list_del(&vif_priv->list);
  	wcn36xx_smd_delete_sta_self(wcn, vif->addr);
  
@@ -177,7 +177,7 @@
  	mutex_unlock(&wcn->conf_mutex);
  }
  
-@@ -1043,6 +1141,7 @@
+@@ -1047,6 +1145,7 @@ static int wcn36xx_add_interface(struct
  
  	vif_priv->bss_index = WCN36XX_HAL_BSS_INVALID_IDX;
  	INIT_LIST_HEAD(&vif_priv->sta_list);
@@ -185,7 +185,7 @@
  	list_add(&vif_priv->list, &wcn->vif_list);
  	wcn36xx_smd_add_sta_self(wcn, vif);
  
-@@ -1616,6 +1715,7 @@
+@@ -1620,6 +1719,7 @@ static int wcn36xx_probe(struct platform
  	mutex_init(&wcn->hal_mutex);
  	mutex_init(&wcn->scan_lock);
  	__skb_queue_head_init(&wcn->amsdu);
@@ -193,7 +193,7 @@
  
  	wcn->hal_buf = devm_kmalloc(wcn->dev, WCN36XX_HAL_BUF_SIZE, GFP_KERNEL);
  	if (!wcn->hal_buf) {
-@@ -1681,6 +1781,7 @@
+@@ -1685,6 +1785,7 @@ static void wcn36xx_remove(struct platfo
  	struct wcn36xx *wcn = hw->priv;
  	wcn36xx_dbg(WCN36XX_DBG_MAC, "platform remove\n");
  
@@ -203,7 +203,7 @@
  	ieee80211_unregister_hw(hw);
 --- a/drivers/net/wireless/ath/wcn36xx/wcn36xx.h
 +++ b/drivers/net/wireless/ath/wcn36xx/wcn36xx.h
-@@ -128,6 +128,7 @@
+@@ -128,6 +128,7 @@ struct wcn36xx_vif {
  	enum ani_ed_type encrypt_type;
  	bool is_joining;
  	bool sta_assoc;
@@ -211,7 +211,7 @@
  	struct wcn36xx_hal_mac_ssid ssid;
  	enum wcn36xx_hal_bss_type bss_type;
  
-@@ -254,6 +255,7 @@
+@@ -254,6 +255,7 @@ struct wcn36xx {
  	struct completion	hal_rsp_compl;
  	struct workqueue_struct	*hal_ind_wq;
  	struct work_struct	hal_ind_work;
