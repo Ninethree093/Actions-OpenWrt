@@ -29,8 +29,18 @@ grep -n "Wno-error=incompatible-pointer-types" package/libs/libnftnl/Makefile &&
 
 
 [ -f include/toplevel.mk ] || cd "$GITHUB_WORKSPACE/openwrt" || exit 1
-grep -rlE '^[[:space:]]*PKG_VERSION[[:space:]]*[:?]?=.*_(rc|alpha|beta|pre|git|svn|cvs|hg|p[0-9])' package feeds --include=Makefile 2>/dev/null | while read -r mk; do
-    pv=$(sed -nE 's/^[[:space:]]*PKG_VERSION[[:space:]]*[:?]?=[[:space:]]*//p' "$mk" | head -n1)
-    sed -i -E 's/^(PKG_VERSION[[:space:]]*[:?]?=[[:space:]]*[0-9][0-9.]*)_[a-z]+[0-9]*/\1/' "$mk"
-    echo "[apk-ver-fixed] $mk"
-done
+patch -p1 --fuzz=2 <<'EOF'
+--- a/include/kernel.mk
++++ b/include/kernel.mk
+@@ -212,7 +212,8 @@
+     SECTION:=kernel
+     CATEGORY:=Kernel modules
+     EXTRA_DEPENDS:=kernel (=$(subst -rc,_rc,$(LINUX_VERSION))~$(LINUX_VERMAGIC)-r$(LINUX_RELEASE))
+-    VERSION:=$(subst -rc,_rc,$(LINUX_VERSION))$(if $(PKG_VERSION),.$(PKG_VERSION))-r$(if $(PKG_RELEASE),$(PKG_RELEASE),$(LINUX_RELEASE))
++    KVER_APK:=$(if $(PKG_VERSION),$(firstword $(subst -, ,$(LINUX_VERSION))),$(subst -rc,_rc,$(LINUX_VERSION)))
++    VERSION:=$(KVER_APK)$(if $(PKG_VERSION),.$(PKG_VERSION))-r$(if $(PKG_RELEASE),$(PKG_RELEASE),$(LINUX_RELEASE))
+     PKGFLAGS:=$(PKGFLAGS)
+     $(call KernelPackage/$(1))
+     $(call KernelPackage/$(1)/$(BOARD))
+EOF
+grep -q 'firstword' include/kernel.mk && echo "OK: kernel.mk 补丁已应用" || echo "FAIL: kernel.mk 补丁未应用"
