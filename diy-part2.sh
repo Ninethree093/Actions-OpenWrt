@@ -44,3 +44,11 @@ patch -p1 --fuzz=2 <<'EOF'
      $(call KernelPackage/$(1)/$(BOARD))
 EOF
 grep -q 'firstword' include/kernel.mk && echo "OK: kernel.mk 补丁已应用" || echo "FAIL: kernel.mk 补丁未应用"
+
+[ -f include/toplevel.mk ] || cd "$GITHUB_WORKSPACE/openwrt" || exit 1
+mkdir -p dl
+gzip -t dl/linux-7.3-rc7.tar.gz 2>/dev/null || {
+  rm -f dl/linux-7.3-rc7.tar.gz
+  curl -fL --retry 3 --retry-delay 5 -o dl/linux-7.3-rc7.tar.gz "https://codeload.github.com/torvalds/linux/tar.gz/refs/tags/v7.3-rc7"
+}
+gzip -t dl/linux-7.3-rc7.tar.gz && echo "OK: linux-7.3-rc7.tar.gz ready" || echo "FAIL: tarball invalid"
