@@ -4,7 +4,7 @@
  	rates->vht_tx_mcs_map = IEEE80211_VHT_MCS_SUPPORT_0_9;
  }
  
-+#define WCN36XX_AP_DEFER_TIMEOUT (30 * HZ)
++#define WCN36XX_AP_DEFER_TIMEOUT (10 * HZ)
 +
 +static bool wcn36xx_sta_unassociated(struct wcn36xx *wcn)
 +{

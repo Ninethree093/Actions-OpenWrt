@@ -105,9 +105,6 @@
 };
 
 &usb {
-	extcon = <&pm8916_usbin>;
-	usb-role-switch;
-
 	status = "okay";
 };
 
