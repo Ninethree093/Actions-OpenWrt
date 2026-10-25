@@ -61,6 +61,13 @@
 			function = LED_FUNCTION_WAN;
 		};
 	};
+
+	usb_id: usb-id {
+		compatible = "linux,extcon-usb-gpio";
+		id-gpio = <&tlmm 110 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&usb_id_default>;
+	};
 };
 
 &bam_dmux {
@@ -106,10 +113,13 @@
 
 &usb {
 	status = "okay";
+	extcon = <&usb_id>, <&usb_id>;
 };
 
 &usb_hs_phy {
-	extcon = <&pm8916_usbin>;
+	v1p8-supply = <&pm8916_l7>;
+	v3p3-supply = <&pm8916_l13>;
+	extcon = <&usb_id>;
 };
 
 &venus {
@@ -143,5 +153,13 @@
 		function = "gpio";
 		drive-strength = <2>;
 		bias-disable;
+	};
+
+	usb_id_default: usb-id-default {
+		pins = "gpio110";
+		function = "gpio";
+		drive-strength = <8>;
+		input-enable;
+		bias-pull-up;
 	};
 };
