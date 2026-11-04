@@ -17,9 +17,14 @@ fi
 OPENWRT_DIR=$(cd "$OPENWRT_DIR" && pwd) || exit 2
 MK="$OPENWRT_DIR/package/kernel/mac80211/Makefile"
 
+# 新版（master）用 PKG_SOURCE_VERSION:=7.2；旧版（25.12/24.10 等）用 PKG_VERSION:=6.18.55
 PKG_VER=$(sed -n 's/^PKG_SOURCE_VERSION:= *//p' "$MK" | head -1)
+if [ -z "$PKG_VER" ]; then
+	PKG_VER=$(sed -n 's/^PKG_VERSION:= *//p' "$MK" | head -1)
+	# 旧版 PKG_VERSION 形如 6.18.55，backports tag 也是 backports-v6.18.55
+fi
 PKG_HASH=$(sed -n 's/^PKG_HASH:= *//p' "$MK" | head -1)
-[ -n "$PKG_VER" ] || { echo "::error::PKG_SOURCE_VERSION not found" >&2; exit 2; }
+[ -n "$PKG_VER" ] || { echo "::error::PKG_SOURCE_VERSION / PKG_VERSION 都没找到" >&2; exit 2; }
 SRC_URL="https://github.com/openwrt/backports/releases/download/backports-v${PKG_VER}/backports-${PKG_VER}.tar.zst"
 TARBALL="$OPENWRT_DIR/dl/backports-${PKG_VER}.tar.zst"
 
