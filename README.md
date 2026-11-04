@@ -18,22 +18,29 @@
 - **手动运行**（Actions → `Build_imm_高通_8916` → Run workflow）：
   - `branch` 下拉框：`master` / `openwrt-25.12` / `openwrt-24.10`
   - `branch_custom`：填了就覆盖下拉框，可填任意分支名（包括 24.10 之前的老分支）
-  - `kernel`：可选，覆盖 `scripts/msm89xx/target/linux/msm89xx/Makefile` 里的 `KERNEL_PATCHVER`
+  - `kernel`：可选，**留空即可**——工作流会自动用该分支自带的内核；填了才强制覆盖
 - **repository_dispatch**：可以在 payload 里传 `{"branch": "openwrt-24.10"}`
 
 优先级：`branch_custom` > `client_payload.branch` > `branch` 下拉 > `master`。
 
-工作流第一步会用 `git ls-remote` 校验分支存在，填错会直接失败并列出该仓库所有可用分支；克隆之后还会把该分支自带的内核版本列出来。
+工作流第一步会用 `git ls-remote` 校验分支存在，填错会直接失败并列出该仓库所有可用分支。
 
-**内核要注意**：`scripts/msm89xx` 的 target 默认 `KERNEL_PATCHVER:=7.3`。
+**内核版本自动跟随分支**：克隆之后、打入 msm89xx target 之前，会先读这个分支自带的 `target/linux/generic/kernel-*`：
 
-| 分支 | 内核 | 说明 |
-| --- | --- | --- |
-| `master` | 7.3 | 默认，和 target 自带的一致 |
-| `openwrt-25.12` | 需在运行时的日志里确认 | 选它时建议先不填 `kernel`，看「检查内核版本可用性」那一步的输出 |
-| `openwrt-24.10` | 6.6 | 需要在 `kernel` 输入框填 `6.6` |
+1. 手动填了 `kernel` → 用它
+2. 分支里有 target 默认的 `7.3` → 用 7.3（master 就是这种）
+3. 分支里没有 7.3 → 用分支自带的最新内核（`openwrt-25.12` 是 6.12，`openwrt-24.10` 是 6.6）
+4. 分支里一个都没有 → 回落 7.3，并在下一步报错
 
-非 `master` 分支能不能编过，取决于 `scripts/msm89xx/target/linux/msm89xx/patches-<内核版本>/` 里的补丁齐不齐（目前 6.6 只有 1 个补丁，6.1 有 10 个，6.12/6.18/7.3 各有若干）。换句话说：**分支可选，但能编通的分支以内核和补丁对得上为准**，拿不准就先跑 master。
+选定值会写进 `KERNEL_PATCHVER`，由 `diy-part1.sh` 覆盖 target 里写死的 `KERNEL_PATCHVER:=7.3`。
+
+| 分支 | 自动选的内核 |
+| --- | --- |
+| `master` | 7.3 |
+| `openwrt-25.12` | 6.12 |
+| `openwrt-24.10` | 6.6 |
+
+**但能编过与否还要看补丁**：`scripts/msm89xx/target/linux/msm89xx/patches-<内核版本>/` 里的补丁要够（目前 6.6 只有 1 个、6.1 有 10 个、6.12 有 2 个、6.18/7.3 各有若干）。内核版本对上了只是必要条件，非 `master` 分支仍可能在设备树/驱动补丁阶段失败，拿不准就先跑 `master`。
 
 ## 支持机型
 

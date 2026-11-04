@@ -21,7 +21,7 @@ on:
         default: ''
         type: string
       kernel:
-        description: ' ← 可选：内核 KERNEL_PATCHVER（如 6.6 / 6.18 / 7.3），留空用 target 自带的 7.3'
+        description: ' ← 可选：内核 KERNEL_PATCHVER（如 6.6 / 6.12 / 7.3），留空 = 自动用分支自带的'
         required: false
         default: ''
         type: string
@@ -245,6 +245,43 @@ jobs:
         echo "HEAD: $(git -C /mnt/openwrt rev-parse --short HEAD) ($(git -C /mnt/openwrt log -1 --format=%cd --date=short))"
         echo "===== 源码最近更新 (最后 10 条) ====="
         git -C /mnt/openwrt log -10 --oneline --no-merges
+
+    # 必须在 DIY_P1 之前：DIY_P1 会把 msm89xx target 的 target/linux/generic/kernel-7.3 拷进来，
+    # 之后就分不清哪些内核是分支原生的、哪些是 target 自带的。
+    - name: 解析内核版本（默认用分支自带的）
+      id: kver
+      working-directory: /mnt/openwrt
+      run: |
+        TARGET_MK="$GITHUB_WORKSPACE/scripts/msm89xx/target/linux/msm89xx/Makefile"
+        TARGET_KP=$(sed -n 's/^KERNEL_PATCHVER:= *//p' "$TARGET_MK")
+        echo "msm89xx target 默认要求: ${TARGET_KP:-unknown}"
+
+        AVAIL=$(ls target/linux/generic/kernel-* 2>/dev/null \
+                  | sed 's#.*/kernel-##' | grep -E '^[0-9]+(\.[0-9]+)*$' | sort -V | tr '\n' ' ')
+        echo "分支 $REPO_BRANCH 自带的内核: ${AVAIL:-（无）}"
+
+        if [ -n "${KERNEL_PATCHVER:-}" ]; then
+          PICK="$KERNEL_PATCHVER"
+          echo "→ 使用手动指定的内核: $PICK"
+        else
+          PICK=""
+          case " $AVAIL " in *" $TARGET_KP "*) PICK="$TARGET_KP" ;; esac
+          if [ -n "$PICK" ]; then
+            echo "→ 分支支持 target 要求的 $PICK，直接用它"
+          else
+            PICK=$(echo $AVAIL | tr ' ' '\n' | tail -1)
+            if [ -n "$PICK" ]; then
+              echo "→ 分支没有 $TARGET_KP，改用分支自带的最新内核: $PICK"
+            else
+              PICK="$TARGET_KP"
+              echo "→ 分支里没找到任何 kernel-* 元数据，回落 target 默认: $PICK"
+            fi
+          fi
+        fi
+
+        echo "KERNEL_PATCHVER=$PICK" >> "$GITHUB_ENV"
+        echo "KERNEL_PATCHVER=$PICK" >> "$GITHUB_OUTPUT"
+        echo "✓ 本次编译使用内核 $PICK"
 
     - name: Load custom DIY_P1_SH
       run: |
@@ -490,6 +527,7 @@ jobs:
         echo "- 默认密码: 空"
         echo "- 源码仓库: ${{ env.REPO_URL }}" >> release.txt
         echo "- 分支: ${{ env.REPO_BRANCH }}" >> release.txt
+        echo "- 选用内核: ${{ steps.kver.outputs.KERNEL_PATCHVER }}" >> release.txt
         echo "- 内核版本: $(grep -h "kmod-usb-core" ${{ env.FIRMWARE }}/*.manifest 2>/dev/null | awk -F' - ' '{print $2}' | grep -oP '[0-9]+\.[0-9]+(\.[0-9]+)?([-~]?rc[0-9]+)?' | head -1)"
         echo ""
         echo "### 主要插件"
