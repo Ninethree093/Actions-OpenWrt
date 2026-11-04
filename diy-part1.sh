@@ -44,13 +44,15 @@ fi
 # 不钉的话会拿到 master 的包，版本和 base 对不上。典型例子：
 #   25.12 的 libffi 在 packages 的 openwrt-25.12 分支里，master 已经把它挪进 base，
 #   于是 25.12 上找不到 libffi，glib2 打包时报 "missing dependencies: libffi.so.8"
+# 注意分隔符是「;」不是「^」：scripts/feeds 里 split(/;/) 取分支，
+# 「^」是钉 commit，用错了会 clone 完再 checkout 一个不存在的 ref 而失败。
 BR="${REPO_BRANCH:-master}"
 if [ -n "$BR" ] && [ "$BR" != "master" ]; then
 	for name in packages luci routing telephony video; do
 		url=$(sed -n "s#^src-git[^ ]* ${name} \(https://[^ ]*\)\$#\1#p" feeds.conf.default | head -1)
 		[ -n "$url" ] || continue
 		if git ls-remote --exit-code --heads "$url" "$BR" >/dev/null 2>&1; then
-			sed -i "s#^\(src-git[^ ]* ${name} https://[^ ]*\)\$#\1^${BR}#" feeds.conf.default
+			sed -i "s#^\(src-git[^ ]* ${name} https://[^ ]*\)\$#\1;${BR}#" feeds.conf.default
 			echo "feeds: $name -> $BR"
 		else
 			echo "feeds: $name 没有 $BR 分支，保持默认分支"
