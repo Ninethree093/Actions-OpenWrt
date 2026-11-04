@@ -25,6 +25,31 @@ on:
         required: false
         default: ''
         type: string
+      device:
+        description: ' ← 选择要编译的机型'
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - jz02v10
+          - ufi001c
+          - ufi001b
+          - ufi103s
+          - qrzl903
+          - w001
+          - ufi003
+          - uz801
+          - mf32
+          - mf601
+          - wf2
+          - sp970v11
+          - sp970v10
+      devices_custom:
+        description: ' ← 可选：自定义机型，空格或逗号分隔可填多个（覆盖上面的选择）'
+        required: false
+        default: ''
+        type: string
       ssh:
         description: ' ← 选择是否开启 SSH 调试专业人员使用'
         required: false
@@ -51,7 +76,59 @@ env:
   TZ: Asia/Shanghai
 
 jobs:
+  # 先算出这次要编哪些机型，结果喂给 build 的 matrix（matrix 不能直接读 inputs）
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      devices: ${{ steps.gen.outputs.devices }}
+      list: ${{ steps.gen.outputs.list }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+
+      - name: 解析要编译的机型
+        id: gen
+        run: |
+          # 优先级：devices_custom > repository_dispatch 的 payload.devices > device 下拉 > all
+          SEL="${{ inputs.devices_custom }}"
+          [ -n "$SEL" ] || SEL="${{ github.event.client_payload.devices }}"
+          [ -n "$SEL" ] || SEL="${{ inputs.device }}"
+          [ -n "$SEL" ] || SEL="all"
+          SEL=$(echo "$SEL" | tr ',' ' ')
+
+          if [ "$SEL" = "all" ]; then
+            LIST="$ALL_DEVICES"
+            echo "选择: 全部机型"
+          else
+            LIST="$SEL"
+            echo "选择: $SEL"
+          fi
+
+          OUT=""
+          for d in $LIST; do
+            if [ ! -f "config/$d.config" ]; then
+              echo "::error::没有 config/$d.config，可选机型如下："
+              ls config/*.config | sed 's#config/##; s#\.config##; s#^#  - #'
+              exit 1
+            fi
+            case " $OUT " in *" $d "*) continue ;; esac
+            OUT="$OUT $d"
+          done
+          OUT="${OUT# }"
+          if [ -z "$OUT" ]; then
+            echo "::error::没有解析出任何机型"
+            exit 1
+          fi
+
+          COUNT=$(echo "$OUT" | wc -w)
+          JSON=$(printf '%s\n' $OUT | sed 's/^/"/; s/$/"/' | tr '\n' ',')
+          JSON="${JSON%,}"
+          echo "list=$OUT" >> "$GITHUB_OUTPUT"
+          echo "devices=[$JSON]" >> "$GITHUB_OUTPUT"
+          echo "✓ 本次编译 $COUNT 个机型: $OUT"
+
   build:
+    needs: setup
     runs-on: ubuntu-24.04
     permissions:
        contents: write
@@ -59,20 +136,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        device:
-          - jz02v10
-          - ufi001c
-          - ufi001b
-          - ufi103s
-          - qrzl903
-          - w001
-          - ufi003
-          - uz801
-          - mf32
-          - mf601
-          - wf2
-          - sp970v11
-          - sp970v10
+        device: ${{ fromJSON(needs.setup.outputs.devices) }}
     steps:
    
     - name: Checkout
@@ -410,7 +474,7 @@ jobs:
         {
         echo "## 高通8916系列 immortalwrt" >> release.txt
         echo "- 编译时间: $(date +"%Y%m%d %H:%M:%S")" >> release.txt
-        echo "- 编译机型: ${{ env.ALL_DEVICES }}" >> release.txt
+        echo "- 编译机型: ${{ needs.setup.outputs.list }}" >> release.txt
         echo "- 管理地址: 192.168.10.1"
         echo "- 默认用户: root"
         echo "- 默认密码: 空"

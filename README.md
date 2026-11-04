@@ -39,7 +39,20 @@
 
 `jz02v10` `ufi001c` `ufi001b` `ufi103s` `qrzl903` `w001` `ufi003` `uz801` `mf32` `mf601` `wf2` `sp970v11` `sp970v10`
 
-对应的编译配置位于 `config/<机型>.config`。如需增删机型，同时修改工作流里的 `env.ALL_DEVICES` 和 `strategy.matrix.device`。
+对应的编译配置位于 `config/<机型>.config`。
+
+## 选择机型
+
+手动运行时会多出两个输入框：
+
+- `device` 下拉：`all`（全部 13 个）或具体某一个机型
+- `devices_custom`：填了就覆盖下拉，空格或逗号分隔可以一次编多个，例如 `ufi001c,ufi003`
+
+优先级：`devices_custom` > `client_payload.devices` > `device` 下拉 > `all`。定时任务和 `repository_dispatch` 默认还是全部机型，行为不变。
+
+工作流先跑一个 `setup` 任务解析名单（去重 + 校验 `config/<机型>.config` 是否存在，填错会列出所有可用机型并失败），再把结果通过 `fromJSON` 喂给 `build` 的矩阵。所以选 1 个机型就只跑 1 个 job，13 个就是 13 个 job，并行度和以前一样。
+
+**增删机型**：加一个 `config/<机型>.config`，然后改两处——`env.ALL_DEVICES` 和 `inputs.device.options` 里同步加上名字。`strategy.matrix` 是动态生成的，不用动。
 
 - 管理地址：`192.168.10.1`
 - 默认用户：`root`，默认密码：空
