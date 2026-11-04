@@ -40,6 +40,26 @@ if [ -f toolchain/kernel-headers/patches/0104-uapi-128bit.patch ]; then
 	fi
 fi
 
+# feeds 跟 base 分支对齐：非 master 时把官方 feed 钉到同名分支。
+# 不钉的话会拿到 master 的包，版本和 base 对不上。典型例子：
+#   25.12 的 libffi 在 packages 的 openwrt-25.12 分支里，master 已经把它挪进 base，
+#   于是 25.12 上找不到 libffi，glib2 打包时报 "missing dependencies: libffi.so.8"
+BR="${REPO_BRANCH:-master}"
+if [ -n "$BR" ] && [ "$BR" != "master" ]; then
+	for name in packages luci routing telephony video; do
+		url=$(sed -n "s#^src-git[^ ]* ${name} \(https://[^ ]*\)\$#\1#p" feeds.conf.default | head -1)
+		[ -n "$url" ] || continue
+		if git ls-remote --exit-code --heads "$url" "$BR" >/dev/null 2>&1; then
+			sed -i "s#^\(src-git[^ ]* ${name} https://[^ ]*\)\$#\1^${BR}#" feeds.conf.default
+			echo "feeds: $name -> $BR"
+		else
+			echo "feeds: $name 没有 $BR 分支，保持默认分支"
+		fi
+	done
+fi
+echo "--- feeds.conf.default ---"
+grep -E '^src-git' feeds.conf.default
+
 # 验证
 ls target/linux/msm89xx/Makefile package/kernel/mac80211/patches/ath/*wcn36xx* package/kernel/mac80211/ath.mk toolchain/musl/include/sys/glibc-types.h
 
