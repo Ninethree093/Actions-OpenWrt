@@ -246,28 +246,31 @@ jobs:
         echo "===== 源码最近更新 (最后 10 条) ====="
         git -C /mnt/openwrt log -10 --oneline --no-merges
 
-    - name: 检查内核版本可用性
-      working-directory: /mnt/openwrt
-      run: |
-        KP="${KERNEL_PATCHVER:-7.3}"
-        echo "分支 $REPO_BRANCH 的内核 KERNEL_PATCHVER=$KP"
-        echo "该分支自带的内核版本："
-        { ls include/kernel-* target/linux/generic/kernel-* 2>/dev/null || true; } \
-          | sed 's#.*/##; s/^/  - /' | sort -u
-        if [ -e "include/kernel-$KP" ] || [ -e "target/linux/generic/kernel-$KP" ]; then
-          echo "✅ 内核 $KP 可用"
-        else
-          echo "::warning::没找到 kernel-$KP，make defconfig 阶段大概率会报 Missing kernel version。"
-          echo "::warning::请在上面的 kernel 输入框里填该分支实际使用的版本后重跑。"
-        fi
-
     - name: Load custom DIY_P1_SH
       run: |
         [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
         chmod +x $DIY_P1_SH
         cd openwrt
         $GITHUB_WORKSPACE/$DIY_P1_SH
-        
+
+    # 必须放在 DIY_P1 之后：msm89xx target 会把自己的 target/linux/generic/kernel-<ver> 拷进来，
+    # 内核版本元数据在 target/linux/generic/kernel-<ver>（新版）或 include/kernel-<ver>（旧版）
+    - name: 检查内核版本可用性
+      working-directory: /mnt/openwrt
+      run: |
+        KP="${KERNEL_PATCHVER:-$(sed -n 's/^KERNEL_PATCHVER:= *//p' target/linux/msm89xx/Makefile)}"
+        echo "KERNEL_PATCHVER=$KP"
+        echo "代码树里可用的内核元数据："
+        { ls include/kernel-* target/linux/generic/kernel-* 2>/dev/null || true; } \
+          | grep -E 'kernel-[0-9]' | sed 's#.*/##; s/^/  - /' | sort -u
+        if [ -e "target/linux/generic/kernel-$KP" ] || [ -e "include/kernel-$KP" ]; then
+          echo "✅ 内核 $KP 的版本/哈希文件存在"
+        else
+          echo "::error::找不到 kernel-$KP 的版本/哈希文件，make 阶段会报 Missing kernel version。"
+          echo "::error::请在上面的 kernel 输入框里填上面列出的某个版本后重跑。"
+          exit 1
+        fi
+
      
     - name: Update feeds
       run: |
@@ -281,7 +284,7 @@ jobs:
         git -C feeds/packages remote get-url origin
 
         echo "📌 Remote HEAD actually used:"
-        git -C feeds/packages ls-remote HEAD || true
+        git -C feeds/packages ls-remote origin HEAD || true
 
     - name: Install feeds
       run: |
@@ -338,12 +341,19 @@ jobs:
        ccache -p | grep -E "max_size|cache_dir"
  
              
-    - name: 查看 openwrt 目录
-      run: ls -la openwrt/
-      
-           ls -l .config
-      
-           ls -la openwrt/.config
+    - name: 查看 openwrt 目录并校验配置
+      run: |
+        ls -la openwrt/ | head -30
+        echo "--- openwrt/.config ---"
+        ls -lh openwrt/.config
+        echo "--- 目标 ---"
+        grep -E '^CONFIG_TARGET_(BOARD|SUBTARGET|PROFILE)=' openwrt/.config || true
+        if ! grep -q '^CONFIG_TARGET_msm89xx=y' openwrt/.config; then
+          echo "::error::defconfig 之后 .config 里没有 CONFIG_TARGET_msm89xx=y，说明分支 $REPO_BRANCH 与 msm89xx target 不匹配（目标被裁掉了）。"
+          echo "::error::请确认内核版本是否填对，或改用 master 分支重试。"
+          exit 1
+        fi
+        echo "✅ .config 仍是 msm89xx 目标"
 
  
     - name: 自动上传最新源码生成.config编译配置
