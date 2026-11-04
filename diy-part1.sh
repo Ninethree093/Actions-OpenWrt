@@ -5,6 +5,14 @@ cp -rf "$GITHUB_WORKSPACE/scripts/msm89xx/target/." target/
 cp -rf "$GITHUB_WORKSPACE/scripts/msm89xx/package/." package/
 cp -rf "$GITHUB_WORKSPACE/scripts/msm89xx/toolchain/." toolchain/
 cp -rf "$GITHUB_WORKSPACE/scripts/msm89xx/feeds.conf.default" feeds.conf.default
+
+# 可选：覆盖 target 的 KERNEL_PATCHVER（选非 master 分支时用，例如 openwrt-24.10 填 6.6）
+if [ -n "${KERNEL_PATCHVER:-}" ]; then
+	sed -i "s/^KERNEL_PATCHVER:=.*/KERNEL_PATCHVER:=${KERNEL_PATCHVER}/" target/linux/msm89xx/Makefile
+	echo "kernel: KERNEL_PATCHVER 覆盖为 ${KERNEL_PATCHVER}"
+	grep -n '^KERNEL_PATCHVER' target/linux/msm89xx/Makefile
+fi
+
 # 验证
 ls target/linux/msm89xx/Makefile package/kernel/mac80211/patches/ath/*wcn36xx* package/kernel/mac80211/ath.mk toolchain/musl/include/sys/glibc-types.h
 

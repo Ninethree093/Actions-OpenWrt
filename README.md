@@ -7,8 +7,33 @@
 
 | 工作流 | 作用 |
 | --- | --- |
-| `Build_imm_高通_8916.yml` | 编译 msm8916 固件的 13 个机型矩阵，自动发布 Release（标签 `MSM8916-<日期>-V<构建号>`），每周六 17:00 定时触发 |
+| `Build_imm_高通_8916.yml` | 编译 msm8916 固件的 13 个机型矩阵，自动发布 Release（标签 `MSM8916-<分支>-<日期>-V<构建号>`），每周六 17:00 定时触发 |
 | `Build_bootloader_msm8916.yml` | 编译 lk2nd / lk1st 引导（`aboot.bin`、`lk2nd.img`），产物名 `msm8916-bootloader` |
+
+## 选择 immortalwrt 分支
+
+源码来自 <https://github.com/immortalwrt/immortalwrt>，分支在运行时选择，不用改代码：
+
+- **定时 / repository_dispatch**：默认 `master`
+- **手动运行**（Actions → `Build_imm_高通_8916` → Run workflow）：
+  - `branch` 下拉框：`master` / `openwrt-25.12` / `openwrt-24.10`
+  - `branch_custom`：填了就覆盖下拉框，可填任意分支名（包括 24.10 之前的老分支）
+  - `kernel`：可选，覆盖 `scripts/msm89xx/target/linux/msm89xx/Makefile` 里的 `KERNEL_PATCHVER`
+- **repository_dispatch**：可以在 payload 里传 `{"branch": "openwrt-24.10"}`
+
+优先级：`branch_custom` > `client_payload.branch` > `branch` 下拉 > `master`。
+
+工作流第一步会用 `git ls-remote` 校验分支存在，填错会直接失败并列出该仓库所有可用分支；克隆之后还会把该分支自带的内核版本列出来。
+
+**内核要注意**：`scripts/msm89xx` 的 target 默认 `KERNEL_PATCHVER:=7.3`。
+
+| 分支 | 内核 | 说明 |
+| --- | --- | --- |
+| `master` | 7.3 | 默认，和 target 自带的一致 |
+| `openwrt-25.12` | 需在运行时的日志里确认 | 选它时建议先不填 `kernel`，看「检查内核版本可用性」那一步的输出 |
+| `openwrt-24.10` | 6.6 | 需要在 `kernel` 输入框填 `6.6` |
+
+非 `master` 分支能不能编过，取决于 `scripts/msm89xx/target/linux/msm89xx/patches-<内核版本>/` 里的补丁齐不齐（目前 6.6 只有 1 个补丁，6.1 有 10 个，6.12/6.18/7.3 各有若干）。换句话说：**分支可选，但能编通的分支以内核和补丁对得上为准**，拿不准就先跑 master。
 
 ## 支持机型
 
