@@ -27,6 +27,19 @@ if [ -n "${KERNEL_PATCHVER:-}" ]; then
 	grep -n '^KERNEL_PATCHVER' target/linux/msm89xx/Makefile
 fi
 
+# toolchain/kernel-headers 的 0104-uapi-128bit.patch 把 __u128 改回 __uint128_t。
+# 但 __u128 是 6.16 之后内核才有的写法，6.6 / 6.12 这些分支的 uapi 本来就是 __uint128_t，
+# 硬套只会 "Hunk FAILED -> Patch failed!" 把 toolchain 编译打断，所以低版本内核直接跳过这个补丁。
+KP="${KERNEL_PATCHVER:-7.3}"
+if [ -f toolchain/kernel-headers/patches/0104-uapi-128bit.patch ]; then
+	if awk -v v="$KP" 'BEGIN{split(v,p,"."); exit ((p[1]+0<6) || (p[1]+0==6 && p[2]+0<16)) ? 0 : 1}'; then
+		rm -f toolchain/kernel-headers/patches/0104-uapi-128bit.patch
+		echo "kernel-headers: 内核 $KP 没有 __u128，跳过 0104-uapi-128bit.patch"
+	else
+		echo "kernel-headers: 内核 $KP 需要 0104-uapi-128bit.patch，保留"
+	fi
+fi
+
 # 验证
 ls target/linux/msm89xx/Makefile package/kernel/mac80211/patches/ath/*wcn36xx* package/kernel/mac80211/ath.mk toolchain/musl/include/sys/glibc-types.h
 
