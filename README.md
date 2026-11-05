@@ -10,20 +10,31 @@
 | `Build_imm_高通_8916.yml` | 编译 msm8916 固件的 13 个机型矩阵，自动发布 Release（标签 `MSM8916-<分支>-<日期>-V<构建号>`），每周六 17:00 定时触发 |
 | `Build_bootloader_msm8916.yml` | 编译 lk2nd / lk1st 引导（`aboot.bin`、`lk2nd.img`），产物名 `msm8916-bootloader` |
 
-## 选择 immortalwrt 分支
+## 选择 immortalwrt 分支 / 稳定版
 
-源码来自 <https://github.com/immortalwrt/immortalwrt>，分支在运行时选择，不用改代码：
+源码来自 <https://github.com/immortalwrt/immortalwrt>，分支或 tag 在运行时选择，不用改代码：
 
 - **定时 / repository_dispatch**：默认 `master`
 - **手动运行**（Actions → `Build_imm_高通_8916` → Run workflow）：
   - `branch` 下拉框：`master` / `openwrt-25.12` / `openwrt-24.10`
-  - `branch_custom`：填了就覆盖下拉框，可填任意分支名（包括 24.10 之前的老分支）
+  - `release` 下拉框：`none` / `v25.12.2` / `v25.12.1` / `v25.12.0` / `v24.10.6` / `v24.10.5`
+    —— 选具体 tag 就编**正式版**（系统里显示 `25.12.2` 而不是 `25.12-SNAPSHOT`），会覆盖 `branch` 的选择
+  - `branch_custom`：填了就覆盖上面两项，可填任意分支名或 tag
   - `kernel`：可选，**留空即可**——工作流会自动用该分支自带的内核；填了才强制覆盖
 - **repository_dispatch**：可以在 payload 里传 `{"branch": "openwrt-24.10"}`
 
-优先级：`branch_custom` > `client_payload.branch` > `branch` 下拉 > `master`。
+优先级：`branch_custom` > `client_payload.branch` > `release` > `branch` 下拉 > `master`。
 
-工作流第一步会用 `git ls-remote` 校验分支存在，填错会直接失败并列出该仓库所有可用分支。
+工作流第一步会用 `git ls-remote` 同时查分支和 tag，填错会直接失败并列出可用项。
+
+## 默认插件
+
+`config/*.config` 里已经调好，13 个机型一致：
+
+- **不含** `luci-app-simadmin`（`CONFIG_PACKAGE_luci-app-simadmin is not set`）
+- **包含** `luci-app-openclash`（`CONFIG_PACKAGE_luci-app-openclash=y`，来自 `small` feed）
+
+需要改的话直接改 `config/<机型>.config` 里对应那行，或者用 `devices_custom` 之外的机型单独调。
 
 **内核版本自动跟随分支**：克隆之后、打入 msm89xx target 之前，会先读这个分支自带的 `target/linux/generic/kernel-*`：
 

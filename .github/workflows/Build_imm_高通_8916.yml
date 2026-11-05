@@ -15,8 +15,20 @@ on:
           - master
           - openwrt-25.12
           - openwrt-24.10
+      release:
+        description: ' ← 可选：编译稳定版 tag（选了就覆盖上面的分支，出正式版号而不是 SNAPSHOT）'
+        required: false
+        default: none
+        type: choice
+        options:
+          - none
+          - v25.12.2
+          - v25.12.1
+          - v25.12.0
+          - v24.10.6
+          - v24.10.5
       branch_custom:
-        description: ' ← 可选：自定义 immortalwrt 分支名，填了就覆盖上面的选择'
+        description: ' ← 可选：自定义分支名或 tag，填了就覆盖上面两项'
         required: false
         default: ''
         type: string
@@ -146,19 +158,27 @@ jobs:
       run: |
         echo "CONFIG_FILE=config/${{ matrix.device }}.config" >> $GITHUB_ENV
 
-    - name: 选择并校验 immortalwrt 分支
+    - name: 选择并校验 immortalwrt 分支/版本
       run: |
-        # 优先级：手动填的 branch_custom > repository_dispatch 的 payload.branch > 下拉选择 > master
+        # 优先级：branch_custom > repository_dispatch 的 payload.branch > release 稳定版 tag > branch 下拉 > master
         BR="${{ inputs.branch_custom }}"
         [ -n "$BR" ] || BR="${{ github.event.client_payload.branch }}"
+        REL="${{ inputs.release }}"
+        if [ -z "$BR" ] && [ -n "$REL" ] && [ "$REL" != "none" ]; then
+          BR="$REL"
+        fi
         [ -n "$BR" ] || BR="${{ inputs.branch }}"
         [ -n "$BR" ] || BR="master"
 
         echo "immortalwrt 仓库: $REPO_URL"
-        echo "immortalwrt 分支: $BR"
-        if ! git ls-remote --exit-code --heads "$REPO_URL" "$BR" >/dev/null 2>&1; then
-          echo "::error::immortalwrt 仓库没有分支 $BR。可用分支如下，请重新选择："
+        echo "选用的分支/版本: $BR"
+        if ! git ls-remote --exit-code --heads "$REPO_URL" "$BR" >/dev/null 2>&1 \
+           && ! git ls-remote --exit-code --tags "$REPO_URL" "$BR" >/dev/null 2>&1; then
+          echo "::error::immortalwrt 仓库里没有分支或 tag「$BR」。可选项如下："
+          echo "--- 分支 ---"
           git ls-remote --heads "$REPO_URL" | sed 's#^.*refs/heads/#  - #' | sort -u
+          echo "--- 稳定版 tag（最近 10 个）---"
+          git ls-remote --tags "$REPO_URL" | sed 's#^.*refs/tags/##; s#\^{}$##' | sort -V -u | tail -10 | sed 's#^#  - #'
           exit 1
         fi
 

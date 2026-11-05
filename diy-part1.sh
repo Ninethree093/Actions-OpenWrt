@@ -27,16 +27,17 @@ if [ -n "${KERNEL_PATCHVER:-}" ]; then
 	grep -n '^KERNEL_PATCHVER' target/linux/msm89xx/Makefile
 fi
 
-# toolchain/kernel-headers 的 0104-uapi-128bit.patch 把 __u128 改回 __uint128_t。
-# 但 __u128 是 6.16 之后内核才有的写法，6.6 / 6.12 这些分支的 uapi 本来就是 __uint128_t，
-# 硬套只会 "Hunk FAILED -> Patch failed!" 把 toolchain 编译打断，所以低版本内核直接跳过这个补丁。
+# toolchain/kernel-headers 的 0104-uapi-128bit.patch 把 arm64 uapi 的 __u128 改回 __uint128_t。
+# 实测：6.12 和 6.18 的 arch/arm64/include/uapi/asm/ptrace.h 里本来就是 __uint128_t，
+# 只有 7.x 才换成 __u128（uapi/linux/types.h 早就有 __u128 定义，但头文件没用它）。
+# 所以这个补丁只对 7.x 有效，6.x 上硬套就是 "Hunk FAILED -> Patch failed!"，直接跳过。
 KP="${KERNEL_PATCHVER:-7.3}"
 if [ -f toolchain/kernel-headers/patches/0104-uapi-128bit.patch ]; then
-	if awk -v v="$KP" 'BEGIN{split(v,p,"."); exit ((p[1]+0<6) || (p[1]+0==6 && p[2]+0<16)) ? 0 : 1}'; then
+	if awk -v v="$KP" 'BEGIN{split(v,p,"."); exit (p[1]+0<7) ? 0 : 1}'; then
 		rm -f toolchain/kernel-headers/patches/0104-uapi-128bit.patch
-		echo "kernel-headers: 内核 $KP 没有 __u128，跳过 0104-uapi-128bit.patch"
+		echo "kernel-headers: 内核 $KP 是 6.x（uapi 本来就用 __uint128_t），跳过 0104-uapi-128bit.patch"
 	else
-		echo "kernel-headers: 内核 $KP 需要 0104-uapi-128bit.patch，保留"
+		echo "kernel-headers: 内核 $KP 是 7.x，保留 0104-uapi-128bit.patch"
 	fi
 fi
 
