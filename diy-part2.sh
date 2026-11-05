@@ -10,6 +10,24 @@ sed -i "s/ucidef_set_interface_lan 'eth0'/ucidef_set_interface_lan 'br-lan'/" pa
 # Modify default theme
 sed -i 's/luci-theme-material/luci-theme-argon/g' feeds/luci/collections/luci/Makefile
 
+# 老分支没有这些 feature 伪包（定义在 package/kernel/linux/modules/*.mk 里，
+# 例如 master 的 input.mk 有 define Package/input-support，25.12 没有）。
+# 但 feeds 里的包是按 master 写的，例如 openstick 的 rmtfs：
+#   DEPENDS:=+input-support +libudev-zero +libqrtr +qrtr-ns
+# 镜像组装阶段 apk 就会报 "input-support (no such package)"。
+# 这里逐个子分支判断：树里没有 Package/<name> 定义，就把依赖从 Makefile 里去掉。
+for feat in audio-support video-support input-support dvb-support scanner-support accel-support; do
+	if grep -rqs "Package/$feat" package/ 2>/dev/null; then
+		continue
+	fi
+	hits=$(grep -rl --include=Makefile "+$feat" feeds package 2>/dev/null || true)
+	[ -n "$hits" ] || continue
+	for mk in $hits; do
+		sed -i "s/ *+$feat//g" "$mk"
+		echo "feeds: $mk 去掉本分支不存在的依赖 +$feat"
+	done
+done
+
 # DbusSmsForwardCPlus
 git clone https://github.com/lkiuyu/DbusSmsForwardCPlus package/DbusSmsForwardCPlus
 
