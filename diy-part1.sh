@@ -40,6 +40,18 @@ if [ -f toolchain/kernel-headers/patches/0104-uapi-128bit.patch ]; then
 	fi
 fi
 
+# dt-bindings/clock/qcom,dsi-phy-28nm.h 是内核 6.15 才加的（6.6 / 6.12 都没有），
+# 但 dts/msm8916.dtsi 引用了里面的 DSI_BYTE_PLL_CLK / DSI_PIXEL_PLL_CLK。
+# 低版本内核 dts 编译会 "fatal error: ... No such file or directory"，
+# 这里把这两个宏直接内联（就是头文件里的全部内容：0 和 1）。
+if [ -f target/linux/msm89xx/dts/msm8916.dtsi ]; then
+	if awk -v v="$KP" 'BEGIN{split(v,p,"."); exit ((p[1]+0<6) || (p[1]+0==6 && p[2]+0<15)) ? 0 : 1}'; then
+		sed -i 's|^#include <dt-bindings/clock/qcom,dsi-phy-28nm.h>|/* kernel < 6.15 has no dsi-phy-28nm.h; inline its two clock IDs */\n#define DSI_BYTE_PLL_CLK 0\n#define DSI_PIXEL_PLL_CLK 1|' target/linux/msm89xx/dts/msm8916.dtsi
+		echo "dts: 内核 $KP 没有 dsi-phy-28nm.h，已内联 DSI_BYTE_PLL_CLK / DSI_PIXEL_PLL_CLK"
+		grep -n 'DSI_BYTE_PLL_CLK\|DSI_PIXEL_PLL_CLK' target/linux/msm89xx/dts/msm8916.dtsi | head -4
+	fi
+fi
+
 # feeds 跟 base 分支对齐：非 master 时把官方 feed 钉到同名分支。
 # 不钉的话会拿到 master 的包，版本和 base 对不上。典型例子：
 #   25.12 的 libffi 在 packages 的 openwrt-25.12 分支里，master 已经把它挪进 base，
