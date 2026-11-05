@@ -50,6 +50,12 @@ if [ -f target/linux/msm89xx/dts/msm8916.dtsi ]; then
 		echo "dts: 内核 $KP 没有 dsi-phy-28nm.h，已内联 DSI_BYTE_PLL_CLK / DSI_PIXEL_PLL_CLK"
 		grep -n 'DSI_BYTE_PLL_CLK\|DSI_PIXEL_PLL_CLK' target/linux/msm89xx/dts/msm8916.dtsi | head -4
 	fi
+
+	# 6.18 起 rpmpd 的电源域 ID 换了名字：6.12 叫 MSM8916_VDDCX/VDDMX，6.18+ 叫 RPMPD_VDDCX/VDDMX，
+	# 值完全相同（0 / 3）。老内核上 dts 里的新名字会原样留给 dtc，被当成语法错误。
+	# 用 #ifndef 别名兜底：新内核已有定义，这段自动失效。
+	sed -i 's|^#include <dt-bindings/power/qcom-rpmpd.h>|&\n/* before 6.18 these ids are MSM8916_VDDCX/VDDMX, values are identical */\n#ifndef RPMPD_VDDCX\n#define RPMPD_VDDCX MSM8916_VDDCX\n#endif\n#ifndef RPMPD_VDDMX\n#define RPMPD_VDDMX MSM8916_VDDMX\n#endif|' target/linux/msm89xx/dts/msm8916.dtsi
+	echo "dts: 已为 RPMPD_VDDCX / RPMPD_VDDMX 加 MSM8916_* 别名（新内核上自动失效）"
 fi
 
 # feeds 跟 base 分支对齐：非 master 时把官方 feed 钉到同名分支。
