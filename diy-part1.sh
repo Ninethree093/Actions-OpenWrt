@@ -58,6 +58,25 @@ if [ -f target/linux/msm89xx/dts/msm8916.dtsi ]; then
 	echo "dts: 已为 RPMPD_VDDCX / RPMPD_VDDMX 加 MSM8916_* 别名（新内核上自动失效）"
 fi
 
+# 老内核的 target config 是残次品：config-6.12 里连 CONFIG_SQUASHFS / OVERLAY_FS /
+# QCOM_Q6V5_MSS / CRYPTO_AES 都没开，编出来的固件挂不上 squashfs 根分区，
+# 刷进机器就是不启动（表现：拿不到后台 IP）。
+# 用 config-7.3 做基底补全，再把 <KP> 独有的项补回去；kconfig 之后会自动丢弃新内核才有的符号。
+CFG="target/linux/msm89xx/config-$KP"
+REF="target/linux/msm89xx/config-7.3"
+if [ -f "$CFG" ] && [ -f "$REF" ] && ! grep -q '^CONFIG_SQUASHFS=y' "$CFG"; then
+	cp "$REF" "$CFG.merged"
+	grep -E '^(CONFIG_[A-Za-z0-9_]+=|# CONFIG_[A-Za-z0-9_]+ is not set)' "$CFG" | while IFS= read -r line; do
+		key=$(printf '%s\n' "$line" | sed -E 's/^# (CONFIG_[A-Za-z0-9_]+) .*/\1/; s/^(CONFIG_[A-Za-z0-9_]+)=.*/\1/')
+		if ! grep -q "^$key=" "$REF" && ! grep -q "^# $key is not set" "$REF"; then
+			printf '%s\n' "$line" >> "$CFG.merged"
+		fi
+	done
+	mv "$CFG.merged" "$CFG"
+	echo "kernel: config-$KP 缺关键项（SQUASHFS 等），已用 config-7.3 补全"
+	grep -E '^CONFIG_(SQUASHFS|OVERLAY_FS|QCOM_Q6V5_MSS|QCOM_WCNSS_PIL|CRYPTO_AES|CRYPTO_GCM)=' "$CFG"
+fi
+
 # feeds 跟 base 分支对齐：非 master 时把官方 feed 钉到同名分支。
 # 不钉的话会拿到 master 的包，版本和 base 对不上。典型例子：
 #   25.12 的 libffi 在 packages 的 openwrt-25.12 分支里，master 已经把它挪进 base，
