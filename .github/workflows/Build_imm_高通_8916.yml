@@ -1,8 +1,7 @@
 name: Build_imm_高通_8916
 
 on:
-  schedule:
-   - cron: '0 17 * * 6'
+  # 不再定时触发，只能手动或通过 API 触发
   repository_dispatch:
   workflow_dispatch:
     inputs:
