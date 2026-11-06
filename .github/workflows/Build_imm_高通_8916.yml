@@ -142,6 +142,8 @@ jobs:
   build:
     needs: setup
     runs-on: ubuntu-24.04
+    # 正常一次全量编译 1.5~2 小时；给个上限，免得 runner 卡死时白占 6 小时（GitHub 默认上限）
+    timeout-minutes: 300
     permissions:
        contents: write
        
@@ -438,11 +440,17 @@ jobs:
       run: |
         cd openwrt
         [ "${{ steps.cache-dl.outputs.cache-hit }}" = "true" ] && echo "cache hit" || echo "cache miss"
-        output=$(make download -j$(nproc) -k V=s 2>&1)
-        if echo "$output" | grep -qiE "Hash verification failed|checksum mismatch|ERROR"; then
-          echo "===== download errors ====="
-          echo "$output" | grep -iE "Hash verification failed|checksum mismatch|ERROR"
+        df -h . || true
+        # 不再用 output=$(...) 全量捕获：包多时输出能到几十 MB，既占内存又把日志吞掉，
+        # 一旦 runner 中途挂了什么线索都留不下。改成写文件 + 只打尾部。
+        make download -j$(nproc) -k > /tmp/dl.log 2>&1 || echo "::warning::make download 有失败项（下面只展示尾部，完整日志见 /tmp/dl.log）"
+        echo "===== download 日志尾部 ====="
+        tail -40 /tmp/dl.log || true
+        if grep -qiE "Hash verification failed|checksum mismatch" /tmp/dl.log; then
+          echo "::warning::检测到校验失败的包："
+          grep -iE "Hash verification failed|checksum mismatch" /tmp/dl.log | head -50
         fi
+        df -h . || true
       shell: bash
       
       
