@@ -58,6 +58,25 @@ tag 会映射成对应分支来算缓存 key：`v25.12.2 → openwrt-25.12`。�
 
 内核版本对上只是必要条件，能不能编通还取决于 `scripts/msm89xx/target/linux/msm89xx/patches-<内核版本>/` 的补丁是否够用。25.12 这条路已经跑通并实机验证过。
 
+## 软件源（固件里的 apk / opkg 源）
+
+固件里的软件源在构建时**按源码版本生成**，不再是写死的快照地址：
+
+| 源码 | 软件源根 |
+| --- | --- |
+| `v25.12.2` | `https://downloads.immortalwrt.org/releases/25.12.2` |
+| `openwrt-25.12` | `https://downloads.immortalwrt.org/releases/25.12-SNAPSHOT` |
+| `v24.10.6` | `https://downloads.immortalwrt.org/releases/24.10.6` |
+| `openwrt-24.10` | `https://downloads.immortalwrt.org/releases/24.10-SNAPSHOT` |
+| `master` | `https://downloads.immortalwrt.org/snapshots` |
+
+只写 `aarch64_generic` 的 5 个通用源：`base` / `luci` / `packages` / `routing` / `telephony`。
+
+- **不写 target 源**：本 target（`msm89xx/msm8916`）上游没有发布，`releases/*/targets/msm89xx/msm8916/packages` 是 404
+- **也不写 `targets/armsr/armv8`**：那是 armsr 设备的 target 源，里面的 kmod 装到 msm8916 上会直接把系统搞坏
+
+25.12 用 apk，生成 `files/etc/apk/repositories.d/distfeeds.list`；24.10 及更早用 opkg，生成 `files/etc/opkg/distfeeds.conf`，两份都写。要加自己的源，写 `/etc/apk/repositories.d/customfeeds.list`。
+
 ## 产物与发布
 
 每次构建成功都会自动发一个 Release：

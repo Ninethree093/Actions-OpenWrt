@@ -35,6 +35,37 @@ git clone https://github.com/lkiuyu/DbusSmsForwardCPlus package/DbusSmsForwardCP
 cp -r "$GITHUB_WORKSPACE/scripts/files-8916" "$GITHUB_WORKSPACE/openwrt/files"
 ls -R "$GITHUB_WORKSPACE/openwrt/files"
 
+# 固件里的软件源按源码版本生成（原来写死 pku 镜像的 snapshots，从 tag 编出来也指向快照，不对）：
+#   v25.12.2      -> https://downloads.immortalwrt.org/releases/25.12.2
+#   openwrt-25.12 -> https://downloads.immortalwrt.org/releases/25.12-SNAPSHOT
+#   v24.10.6      -> https://downloads.immortalwrt.org/releases/24.10.6
+#   openwrt-24.10 -> https://downloads.immortalwrt.org/releases/24.10-SNAPSHOT
+#   master        -> https://downloads.immortalwrt.org/snapshots
+# 只写 aarch64_generic 的 5 个通用源：本 target（msm89xx/msm8916）上游没有发布，
+# releases/*/targets/msm89xx/msm8916/packages 是 404；而 armsr/armv8 的 target 源是给
+# armsr 设备的，其 kmod 装到 msm8916 上会直接坏，所以一律不写。
+case "${REPO_BRANCH:-master}" in
+v[0-9]*) VROOT="https://downloads.immortalwrt.org/releases/${REPO_BRANCH#v}" ;;
+openwrt-*) VROOT="https://downloads.immortalwrt.org/releases/${REPO_BRANCH#openwrt-}-SNAPSHOT" ;;
+*) VROOT="https://downloads.immortalwrt.org/snapshots" ;;
+esac
+echo "软件源根: $VROOT"
+FEED_LIST="base luci packages routing telephony"
+
+mkdir -p files/etc/apk/repositories.d
+{
+	echo "# 自动生成，跟随构建版本 ${REPO_BRANCH}；自定义源写 customfeeds.list"
+	for f in $FEED_LIST; do echo "$VROOT/packages/aarch64_generic/$f/packages.adb"; done
+} > files/etc/apk/repositories.d/distfeeds.list
+
+mkdir -p files/etc/opkg
+{
+	for f in $FEED_LIST; do echo "src/gz immortalwrt_$f $VROOT/packages/aarch64_generic/$f"; done
+} > files/etc/opkg/distfeeds.conf
+
+echo "--- distfeeds.list ---"; cat files/etc/apk/repositories.d/distfeeds.list
+echo "--- distfeeds.conf ---"; cat files/etc/opkg/distfeeds.conf
+
 
 # 压制 GCC 14 类型错误
 pwd

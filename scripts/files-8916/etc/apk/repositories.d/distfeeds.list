@@ -1,8 +1,11 @@
-# This file is auto-generated and build-specific, any changes will be intentionally lost in sysupgrade.
-# Add your custom feeds to /etc/apk/repositories.d/customfeeds.list
-https://mirrors.pku.edu.cn/immortalwrt/snapshots/targets/armsr/armv8/packages/packages.adb
-https://mirrors.pku.edu.cn/immortalwrt/snapshots/packages/aarch64_generic/base/packages.adb
-https://mirrors.pku.edu.cn/immortalwrt/snapshots/packages/aarch64_generic/luci/packages.adb
-https://mirrors.pku.edu.cn/immortalwrt/snapshots/packages/aarch64_generic/packages/packages.adb
-https://mirrors.pku.edu.cn/immortalwrt/snapshots/packages/aarch64_generic/routing/packages.adb
-https://mirrors.pku.edu.cn/immortalwrt/snapshots/packages/aarch64_generic/telephony/packages.adb
+# 构建时由 diy-part2.sh 按源码版本重新生成，这里只是默认值（snapshots）。
+# 实际内容：
+#   v25.12.2      -> releases/25.12.2
+#   openwrt-25.12 -> releases/25.12-SNAPSHOT
+#   master        -> snapshots
+# 自定义源请写 customfeeds.list
+https://downloads.immortalwrt.org/snapshots/packages/aarch64_generic/base/packages.adb
+https://downloads.immortalwrt.org/snapshots/packages/aarch64_generic/luci/packages.adb
+https://downloads.immortalwrt.org/snapshots/packages/aarch64_generic/packages/packages.adb
+https://downloads.immortalwrt.org/snapshots/packages/aarch64_generic/routing/packages.adb
+https://downloads.immortalwrt.org/snapshots/packages/aarch64_generic/telephony/packages.adb
