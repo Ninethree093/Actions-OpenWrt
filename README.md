@@ -48,7 +48,39 @@ tag 会映射成对应分支来算缓存 key：`v25.12.2 → openwrt-25.12`。�
 
 选定值写进 `KERNEL_PATCHVER`，由 `diy-part1.sh` 覆盖 target 里写死的 `KERNEL_PATCHVER:=7.3`。
 
-**但能编过与否还要看补丁**：`scripts/msm89xx/target/linux/msm89xx/patches-<内核版本>/` 里的补丁要够（目前 6.6 只有 1 个、6.1 有 10 个、6.12 有 2 个、6.18/7.3 各有若干）。内核版本对上了只是必要条件，非 `master` 分支仍可能在设备树/驱动补丁阶段失败，拿不准就先跑 `master`。
+### 各源码的验证情况
+
+| 源码 | 内核 | 状态 |
+| --- | --- | --- |
+| `openwrt-25.12` / `v25.12.x` | 6.12 | ✅ 已编译并**实机启动成功**（jz02v10） |
+| `openwrt-24.10` / `v24.10.x` | 6.6 | ⚠️ 未验证（6.6 的 target 补丁很少） |
+| `master` | 6.18 | ⚠️ 未验证（上游默认内核已是 6.18，而 target 按 7.3 写的） |
+
+内核版本对上只是必要条件，能不能编通还取决于 `scripts/msm89xx/target/linux/msm89xx/patches-<内核版本>/` 的补丁是否够用。25.12 这条路已经跑通并实机验证过。
+
+## 产物与发布
+
+每次构建成功都会自动发一个 Release：
+
+```
+MSM8916-<源码>-<日期>-V<构建号>
+例：MSM8916-v25.12.2-2026.11.06-V21
+```
+
+Release 正文包含编译时间、机型、版本类型（稳定版 / 快照版）、源码、内核、管理地址，以及本次实际带上的 `luci-app-*` 清单。
+
+附件一共 9 个：
+
+| 文件 | 用途 |
+| --- | --- |
+| `*-squashfs-sysupgrade.bin` | **日常升级用这个**（系统内 / Web 在线升级） |
+| `*-squashfs-system.img` | 首次刷机的 rootfs，改名为 `rootfs.img` |
+| `*-squashfs-boot.img` | 首次刷机的内核，改名为 `boot.img` |
+| `*.manifest` | 本次固件的完整包清单 |
+| `config.buildinfo` / `feeds.buildinfo` / `version.buildinfo` | 构建输入快照，便于复现 |
+| `profiles.json` / `sha256sums` | 机型列表 / 校验和 |
+
+构建过程中还会额外上传一个 `build-config` artifact（含最终的 `.config` 和 `feeds.conf.default`），排查问题时用得上。
 
 ## 支持机型
 

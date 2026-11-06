@@ -44,11 +44,6 @@ on:
         required: false
         default: false
         type: boolean
-      log_switch:
-        description: " ← 单线程编译 默认4线程"
-        required: false
-        default: false
-        type: boolean
 
 
 env:
@@ -408,8 +403,6 @@ jobs:
         restore-keys: |
           dl-${{ runner.os }}-${{ env.CACHE_BRANCH }}-immortalwrt-
           dl-${{ runner.os }}-immortalwrt-
-          dl-${{ runner.os }}-c1c7610cf12d51c4330c53e338ebd7f883d32b71
-          key: dl-${{ runner.os }}-${{ steps.srcver.outputs.sha }}
 
     - name: Download package
       run: |
@@ -516,27 +509,31 @@ jobs:
         BR_TAG="${REPO_BRANCH//\//-}"
         echo "release_tag=MSM8916-${BR_TAG}-$(date +%Y.%m.%d)-V${{ github.run_number }}" >> $GITHUB_OUTPUT
         echo "release_name=MSM8916-${BR_TAG}-$(date +%Y.%m.%d-%H%M)" >> $GITHUB_OUTPUT
-        touch release.txt
-        if [ "${UPLOAD_GOFILE}" = "true" ] && [ -n "${{ steps.gofile.outputs.url }}" ]; then
-          echo "🔗 GoFile" >> release.txt
-        fi
-        echo "" >> release.txt
+
+        # tag 构建 = 正式版，分支构建 = 快照
+        case "$REPO_BRANCH" in
+          v[0-9]*) KIND="稳定版 ${REPO_BRANCH#v}" ;;
+          *)       KIND="快照版 ${REPO_BRANCH}" ;;
+        esac
+
         {
-        echo "## 高通8916系列 immortalwrt" >> release.txt
-        echo "- 编译时间: $(date +"%Y%m%d %H:%M:%S")" >> release.txt
-        echo "- 编译机型: ${{ needs.setup.outputs.list }}" >> release.txt
+        echo "## 高通 8916 系列 immortalwrt"
+        echo ""
+        echo "- 编译时间: $(date +'%Y-%m-%d %H:%M:%S')"
+        echo "- 编译机型: ${{ needs.setup.outputs.list }}"
+        echo "- 版本: $KIND"
+        echo "- 源码: ${REPO_URL} @ ${REPO_BRANCH}"
+        echo "- 内核: ${KERNEL_PATCHVER}"
         echo "- 管理地址: 192.168.10.1"
-        echo "- 默认用户: root"
-        echo "- 默认密码: 空"
-        echo "- 源码仓库: ${{ env.REPO_URL }}" >> release.txt
-        echo "- 分支: ${{ env.REPO_BRANCH }}" >> release.txt
-        echo "- 选用内核: ${{ steps.kver.outputs.KERNEL_PATCHVER }}" >> release.txt
-        echo "- 内核版本: $(grep -h "kmod-usb-core" ${{ env.FIRMWARE }}/*.manifest 2>/dev/null | awk -F' - ' '{print $2}' | grep -oP '[0-9]+\.[0-9]+(\.[0-9]+)?([-~]?rc[0-9]+)?' | head -1)"
+        echo "- 默认用户 root，默认密码为空"
+        echo ""
+        echo "### 刷机"
+        echo "- 首次刷机：system.img + boot.img 配仓库里的 flash.zip 线刷"
+        echo "- 已在用本固件：直接升级 *-squashfs-sysupgrade.bin"
         echo ""
         echo "### 主要插件"
-        echo "#### luci-app 系列"
         grep -h "luci-app-" ${{ env.FIRMWARE }}/*.manifest 2>/dev/null | awk -F':' '{print $NF}' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -oP 'luci-app-[a-zA-Z0-9_-]+' | sort -u | sed 's/^/- /'
-        } >> release.txt
+        } > release.txt
         echo "status=success" >> $GITHUB_OUTPUT
 
  
