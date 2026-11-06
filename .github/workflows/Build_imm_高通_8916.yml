@@ -6,37 +6,20 @@ on:
   repository_dispatch:
   workflow_dispatch:
     inputs:
-      branch:
-        description: ' ← 选择 immortalwrt 分支（24.10 及以后）'
+      source:
+        description: ' ← 选择源码：分支（跟随上游更新）或稳定版 tag（v 开头，出正式版号）'
         required: true
-        default: master
+        default: openwrt-25.12
         type: choice
         options:
-          - master
           - openwrt-25.12
           - openwrt-24.10
-      release:
-        description: ' ← 可选：编译稳定版 tag（选了就覆盖上面的分支，出正式版号而不是 SNAPSHOT）'
-        required: false
-        default: none
-        type: choice
-        options:
-          - none
+          - master
           - v25.12.2
           - v25.12.1
           - v25.12.0
           - v24.10.6
           - v24.10.5
-      branch_custom:
-        description: ' ← 可选：自定义分支名或 tag，填了就覆盖上面两项'
-        required: false
-        default: ''
-        type: string
-      kernel:
-        description: ' ← 可选：内核 KERNEL_PATCHVER（如 6.6 / 6.12 / 7.3），留空 = 自动用分支自带的'
-        required: false
-        default: ''
-        type: string
       device:
         description: ' ← 选择要编译的机型'
         required: true
@@ -57,11 +40,6 @@ on:
           - wf2
           - sp970v11
           - sp970v10
-      devices_custom:
-        description: ' ← 可选：自定义机型，空格或逗号分隔可填多个（覆盖上面的选择）'
-        required: false
-        default: ''
-        type: string
       ssh:
         description: ' ← 选择是否开启 SSH 调试专业人员使用'
         required: false
@@ -77,8 +55,10 @@ on:
 env:
   ALL_DEVICES: "jz02v10 ufi001c ufi001b ufi103s qrzl903 w001 ufi003 uz801 mf32 mf601 wf2 sp970v11 sp970v10"
   REPO_URL: https://github.com/immortalwrt/immortalwrt
-  # 默认分支；实际用的分支由下面的「选择并校验 immortalwrt 分支」步骤决定，可被 workflow_dispatch 覆盖
+  # 实际用的分支/tag 由下面的「选择并校验源码」步骤决定（可被 workflow_dispatch 覆盖）
   REPO_BRANCH: master
+  # 缓存用的分支名：tag 会映射成对应分支（v25.12.2 -> openwrt-25.12），让 tag 和分支共用 ccache/dl 缓存
+  CACHE_BRANCH: master
   FEEDS_CONF: feeds.conf.default
   DIY_P1_SH: diy-part1.sh
   DIY_P2_SH: diy-part2.sh
@@ -101,12 +81,9 @@ jobs:
       - name: 解析要编译的机型
         id: gen
         run: |
-          # 优先级：devices_custom > repository_dispatch 的 payload.devices > device 下拉 > all
-          SEL="${{ inputs.devices_custom }}"
-          [ -n "$SEL" ] || SEL="${{ github.event.client_payload.devices }}"
-          [ -n "$SEL" ] || SEL="${{ inputs.device }}"
+          # 只有下拉：all = 全部 13 个机型，否则编选中的那个
+          SEL="${{ inputs.device }}"
           [ -n "$SEL" ] || SEL="all"
-          SEL=$(echo "$SEL" | tr ',' ' ')
 
           if [ "$SEL" = "all" ]; then
             LIST="$ALL_DEVICES"
@@ -160,20 +137,14 @@ jobs:
       run: |
         echo "CONFIG_FILE=config/${{ matrix.device }}.config" >> $GITHUB_ENV
 
-    - name: 选择并校验 immortalwrt 分支/版本
+    - name: 选择并校验源码
       run: |
-        # 优先级：branch_custom > repository_dispatch 的 payload.branch > release 稳定版 tag > branch 下拉 > master
-        BR="${{ inputs.branch_custom }}"
-        [ -n "$BR" ] || BR="${{ github.event.client_payload.branch }}"
-        REL="${{ inputs.release }}"
-        if [ -z "$BR" ] && [ -n "$REL" ] && [ "$REL" != "none" ]; then
-          BR="$REL"
-        fi
-        [ -n "$BR" ] || BR="${{ inputs.branch }}"
+        # 一个下拉同时管分支和稳定版 tag；定时触发时无 inputs，回落到 master
+        BR="${{ inputs.source }}"
         [ -n "$BR" ] || BR="master"
 
         echo "immortalwrt 仓库: $REPO_URL"
-        echo "选用的分支/版本: $BR"
+        echo "选用的源码: $BR"
         if ! git ls-remote --exit-code --heads "$REPO_URL" "$BR" >/dev/null 2>&1 \
            && ! git ls-remote --exit-code --tags "$REPO_URL" "$BR" >/dev/null 2>&1; then
           echo "::error::immortalwrt 仓库里没有分支或 tag「$BR」。可选项如下："
@@ -184,9 +155,18 @@ jobs:
           exit 1
         fi
 
+        # tag 映射成分支名，让 tag 构建复用分支的 ccache/dl 缓存
+        CACHE="$BR"
+        case "$BR" in
+        v[0-9]*)
+          _ver=$(printf '%s' "$BR" | sed -E 's/^v([0-9]+\.[0-9]+).*/\1/')
+          [ -n "$_ver" ] && CACHE="openwrt-$_ver"
+          ;;
+        esac
+
         echo "REPO_BRANCH=$BR" >> "$GITHUB_ENV"
-        echo "KERNEL_PATCHVER=${{ inputs.kernel }}" >> "$GITHUB_ENV"
-        echo "✓ 将使用 immortalwrt@$BR"
+        echo "CACHE_BRANCH=$CACHE" >> "$GITHUB_ENV"
+        echo "✓ 将使用 immortalwrt@$BR（缓存按 $CACHE 复用）"
 
 
     - name: Show hardware info
@@ -270,7 +250,8 @@ jobs:
 
     # 必须在 DIY_P1 之前：DIY_P1 会把 msm89xx target 的 target/linux/generic/kernel-7.3 拷进来，
     # 之后就分不清哪些内核是分支原生的、哪些是 target 自带的。
-    - name: 解析内核版本（默认用分支自带的）
+    # 不再提供手动内核选项：永远用分支/tag 自带的内核（master=6.18、25.12=6.12、24.10=6.6）。
+    - name: 解析内核版本（用源码自带）
       id: kver
       working-directory: /mnt/openwrt
       run: |
@@ -280,24 +261,19 @@ jobs:
 
         AVAIL=$(ls target/linux/generic/kernel-* 2>/dev/null \
                   | sed 's#.*/kernel-##' | grep -E '^[0-9]+(\.[0-9]+)*$' | sort -V | tr '\n' ' ')
-        echo "分支 $REPO_BRANCH 自带的内核: ${AVAIL:-（无）}"
+        echo "源码 $REPO_BRANCH 自带的内核: ${AVAIL:-（无）}"
 
-        if [ -n "${KERNEL_PATCHVER:-}" ]; then
-          PICK="$KERNEL_PATCHVER"
-          echo "→ 使用手动指定的内核: $PICK"
+        PICK=""
+        case " $AVAIL " in *" $TARGET_KP "*) PICK="$TARGET_KP" ;; esac
+        if [ -n "$PICK" ]; then
+          echo "→ 源码支持 target 要求的 $PICK，直接用它"
         else
-          PICK=""
-          case " $AVAIL " in *" $TARGET_KP "*) PICK="$TARGET_KP" ;; esac
+          PICK=$(echo $AVAIL | tr ' ' '\n' | tail -1)
           if [ -n "$PICK" ]; then
-            echo "→ 分支支持 target 要求的 $PICK，直接用它"
+            echo "→ 源码没有 $TARGET_KP，改用自带的最新内核: $PICK"
           else
-            PICK=$(echo $AVAIL | tr ' ' '\n' | tail -1)
-            if [ -n "$PICK" ]; then
-              echo "→ 分支没有 $TARGET_KP，改用分支自带的最新内核: $PICK"
-            else
-              PICK="$TARGET_KP"
-              echo "→ 分支里没找到任何 kernel-* 元数据，回落 target 默认: $PICK"
-            fi
+            PICK="$TARGET_KP"
+            echo "→ 源码里没找到任何 kernel-* 元数据，回落 target 默认: $PICK"
           fi
         fi
 
@@ -377,9 +353,9 @@ jobs:
       uses: actions/cache@v5
       with:
         path: /mnt/openwrt/.ccache
-        key: ccache-msm8916-${{ env.REPO_BRANCH }}-${{ github.run_id }}
+        key: ccache-msm8916-${{ env.CACHE_BRANCH }}-${{ github.run_id }}
         restore-keys: |
-          ccache-msm8916-${{ env.REPO_BRANCH }}-
+          ccache-msm8916-${{ env.CACHE_BRANCH }}-
           ccache-msm8916-
 
     - name: Setup ccache
@@ -429,9 +405,9 @@ jobs:
       uses: actions/cache@v5
       with:
         path: openwrt/dl
-        key: dl-${{ runner.os }}-${{ env.REPO_BRANCH }}-immortalwrt-${{ hashFiles('openwrt/feeds.conf.default') }}
+        key: dl-${{ runner.os }}-${{ env.CACHE_BRANCH }}-immortalwrt-${{ hashFiles('openwrt/feeds.conf.default') }}
         restore-keys: |
-          dl-${{ runner.os }}-${{ env.REPO_BRANCH }}-immortalwrt-
+          dl-${{ runner.os }}-${{ env.CACHE_BRANCH }}-immortalwrt-
           dl-${{ runner.os }}-immortalwrt-
           dl-${{ runner.os }}-c1c7610cf12d51c4330c53e338ebd7f883d32b71
           key: dl-${{ runner.os }}-${{ steps.srcver.outputs.sha }}

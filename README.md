@@ -10,46 +10,43 @@
 | `Build_imm_高通_8916.yml` | 编译 msm8916 固件的 13 个机型矩阵，自动发布 Release（标签 `MSM8916-<分支>-<日期>-V<构建号>`），每周六 17:00 定时触发 |
 | `Build_bootloader_msm8916.yml` | 编译 lk2nd / lk1st 引导（`aboot.bin`、`lk2nd.img`），产物名 `msm8916-bootloader` |
 
-## 选择 immortalwrt 分支 / 稳定版
+## 选择 immortalwrt 源码（分支 / 稳定版二合一）
 
-源码来自 <https://github.com/immortalwrt/immortalwrt>，分支或 tag 在运行时选择，不用改代码：
+源码来自 <https://github.com/immortalwrt/immortalwrt>，运行时只用一个下拉框选，不用改代码：
 
-- **定时 / repository_dispatch**：默认 `master`
-- **手动运行**（Actions → `Build_imm_高通_8916` → Run workflow）：
-  - `branch` 下拉框：`master` / `openwrt-25.12` / `openwrt-24.10`
-  - `release` 下拉框：`none` / `v25.12.2` / `v25.12.1` / `v25.12.0` / `v24.10.6` / `v24.10.5`
-    —— 选具体 tag 就编**正式版**（系统里显示 `25.12.2` 而不是 `25.12-SNAPSHOT`），会覆盖 `branch` 的选择
-  - `branch_custom`：填了就覆盖上面两项，可填任意分支名或 tag
-  - `kernel`：可选，**留空即可**——工作流会自动用该分支自带的内核；填了才强制覆盖
-- **repository_dispatch**：可以在 payload 里传 `{"branch": "openwrt-24.10"}`
-
-优先级：`branch_custom` > `client_payload.branch` > `release` > `branch` 下拉 > `master`。
-
-工作流第一步会用 `git ls-remote` 同时查分支和 tag，填错会直接失败并列出可用项。
-
-## 默认插件
-
-`config/*.config` 里已经调好，13 个机型一致：
-
-- **不含** `luci-app-simadmin`（`CONFIG_PACKAGE_luci-app-simadmin is not set`）
-- **包含** `luci-app-openclash`（`CONFIG_PACKAGE_luci-app-openclash=y`，来自 `small` feed）
-
-需要改的话直接改 `config/<机型>.config` 里对应那行，或者用 `devices_custom` 之外的机型单独调。
-
-**内核版本自动跟随分支**：克隆之后、打入 msm89xx target 之前，会先读这个分支自带的 `target/linux/generic/kernel-*`：
-
-1. 手动填了 `kernel` → 用它
-2. 分支里有 target 默认的 `7.3` → 用 7.3（master 就是这种）
-3. 分支里没有 7.3 → 用分支自带的最新内核（`openwrt-25.12` 是 6.12，`openwrt-24.10` 是 6.6）
-4. 分支里一个都没有 → 回落 7.3，并在下一步报错
-
-选定值会写进 `KERNEL_PATCHVER`，由 `diy-part1.sh` 覆盖 target 里写死的 `KERNEL_PATCHVER:=7.3`。
-
-| 分支 | 自动选的内核 |
+| 下拉项 | 说明 |
 | --- | --- |
-| `master` | 7.3 |
-| `openwrt-25.12` | 6.12 |
-| `openwrt-24.10` | 6.6 |
+| `openwrt-25.12` | 25.12 分支，跟随上游更新（默认） |
+| `openwrt-24.10` | 24.10 分支 |
+| `master` | 开发分支，内核随上游变化（当前 6.18） |
+| `v25.12.2` `v25.12.1` `v25.12.0` | 25.12 稳定版 tag，编出来是正式版号 |
+| `v24.10.6` `v24.10.5` | 24.10 稳定版 tag |
+
+- **定时任务**：没有 inputs，回落到 `master`
+- **机型**：另一个下拉 `device`，`all` = 全部 13 个，否则只编选中的那个
+- 没有任何自定义输入项：分支/tag 只能从下拉里选，内核也自动跟随源码
+
+**只有稳定版 tag 才会显示正式版号**（`25.12.2`）；选分支编出来是 `25.12-SNAPSHOT`。
+
+### 缓存复用
+
+tag 会映射成对应分支来算缓存 key：`v25.12.2 → openwrt-25.12`。所以第一次编某个 tag 时，能直接复用同名分支的 `ccache` 和 `dl` 缓存，省掉大部分重复编译和下载。
+
+### 内核自动跟随源码
+
+不再提供手动内核选项。克隆之后、打入 msm89xx target 之前，读源码自带的 `target/linux/generic/kernel-*`：
+
+1. 源码里有 target 默认要求的 `7.3` → 用 7.3
+2. 没有 7.3 → 用源码自带的最新内核
+3. 一个都没有 → 回落 7.3，并在下一步报错
+
+| 源码 | 自动选的内核 |
+| --- | --- |
+| `openwrt-25.12` / `v25.12.x` | 6.12 |
+| `openwrt-24.10` / `v24.10.x` | 6.6 |
+| `master` | 6.18（随上游变化） |
+
+选定值写进 `KERNEL_PATCHVER`，由 `diy-part1.sh` 覆盖 target 里写死的 `KERNEL_PATCHVER:=7.3`。
 
 **但能编过与否还要看补丁**：`scripts/msm89xx/target/linux/msm89xx/patches-<内核版本>/` 里的补丁要够（目前 6.6 只有 1 个、6.1 有 10 个、6.12 有 2 个、6.18/7.3 各有若干）。内核版本对上了只是必要条件，非 `master` 分支仍可能在设备树/驱动补丁阶段失败，拿不准就先跑 `master`。
 
@@ -61,16 +58,23 @@
 
 ## 选择机型
 
-手动运行时会多出两个输入框：
+只有一个 `device` 下拉框：
 
-- `device` 下拉：`all`（全部 13 个）或具体某一个机型
-- `devices_custom`：填了就覆盖下拉，空格或逗号分隔可以一次编多个，例如 `ufi001c,ufi003`
+- `all`（默认）= 全部 13 个机型，13 个 job 并行
+- 具体某一个机型 = 只跑 1 个 job
 
-优先级：`devices_custom` > `client_payload.devices` > `device` 下拉 > `all`。定时任务和 `repository_dispatch` 默认还是全部机型，行为不变。
-
-工作流先跑一个 `setup` 任务解析名单（去重 + 校验 `config/<机型>.config` 是否存在，填错会列出所有可用机型并失败），再把结果通过 `fromJSON` 喂给 `build` 的矩阵。所以选 1 个机型就只跑 1 个 job，13 个就是 13 个 job，并行度和以前一样。
+工作流先跑一个 `setup` 任务解析名单（校验 `config/<机型>.config` 是否存在，填错会列出所有可用机型并失败），再把结果通过 `fromJSON` 喂给 `build` 的矩阵。
 
 **增删机型**：加一个 `config/<机型>.config`，然后改两处——`env.ALL_DEVICES` 和 `inputs.device.options` 里同步加上名字。`strategy.matrix` 是动态生成的，不用动。
+
+## 默认插件
+
+`config/*.config` 里已经调好，13 个机型一致：
+
+- **不含** `luci-app-simadmin`（`CONFIG_PACKAGE_luci-app-simadmin is not set`）
+- **包含** `luci-app-openclash`（`CONFIG_PACKAGE_luci-app-openclash=y`，来自 `small` feed）
+
+需要改的话直接改 `config/<机型>.config` 里对应那行。
 
 - 管理地址：`192.168.10.1`
 - 默认用户：`root`，默认密码：空
