@@ -85,6 +85,17 @@ fi
 # 注意分隔符是「;」不是「^」：scripts/feeds 里 split(/;/) 取分支，
 # 「^」是钉 commit，用错了会 clone 完再 checkout 一个不存在的 ref 而失败。
 BR="${REPO_BRANCH:-master}"
+# REPO_BRANCH 可能是稳定版 tag（v25.12.2），而 feed 需要的是对应分支（openwrt-25.12），
+# 否则 ls-remote --heads 查不到，就退回默认的 master feed，libffi 之类又会丢。
+case "$BR" in
+v[0-9]*)
+	_ver=$(printf '%s' "$BR" | sed -E 's/^v([0-9]+\.[0-9]+).*/\1/')
+	if [ -n "$_ver" ]; then
+		echo "feeds: 版本 tag $REPO_BRANCH 对应分支 openwrt-$_ver"
+		BR="openwrt-$_ver"
+	fi
+	;;
+esac
 if [ -n "$BR" ] && [ "$BR" != "master" ]; then
 	for name in packages luci routing telephony video; do
 		url=$(sed -n "s#^src-git[^ ]* ${name} \(https://[^ ]*\)\$#\1#p" feeds.conf.default | head -1)
