@@ -9,6 +9,18 @@
 
 本仓库只保留 msm8916 相关的编译流程，其它机型（mt7620 / mt7621 / mt7628 / XG-040G / sy108 等）已移除。
 
+## 关于本仓库（Fork 说明）
+
+本仓库 fork 自 [`xuxin1955/Actions`](https://github.com/xuxin1955/Actions)，但内容已经大改：只保留 msm8916、工作流重写、主分支改为 `immortalwrt`。所以在 GitHub 上仍会显示 “forked from”。
+
+因为它还是 fork，有三点要注意：
+
+- **不要点 “Sync fork”**：上游是另一套多机型项目，同步会把它的工作流和配置合进来，覆盖这里的改动。要跟随 immortalwrt 上游更新，改编译时的 `source` 下拉就行。
+- **提 PR 请指向本仓库**：fork 的默认 PR 目标是父仓库，别提交到上游去。
+- **许可证沿用 fork 继承的 GPL-3.0**（覆盖本仓库自有文件），`scripts/msm89xx` 另按上游 GPL-2.0，详见文末「许可证」。
+
+> 旧的 `main` 分支是 fork 时带过来的历史内容（新分支是 `immortalwrt`），如果不需要可以删掉，删掉之后 “Sync fork” 按钮也会消失，能避免误点。
+
 ## 工作流
 
 | 工作流 | 作用 |
