@@ -1,5 +1,12 @@
 name: Build_imm_高通_8916
 
+# 同一个工作流同时只允许一个运行：两次构建重叠时会抢同一个缓存 key，
+# 实测 2026-11-07 的三次构建里，两次和另一次重叠的都死在 runner 上（日志都没上传），
+# 独占那次正常。排队比并发安全。
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 on:
   # 不再定时触发，只能手动或通过 API 触发
   repository_dispatch:
@@ -117,6 +124,7 @@ jobs:
     timeout-minutes: 300
     permissions:
        contents: write
+       actions: write
        
     strategy:
       fail-fast: false
@@ -394,20 +402,12 @@ jobs:
          ${{ github.workspace }}/openwrt/feeds.conf.default
        include-hidden-files: true
        
-    - name: Cache dl
-      id: cache-dl
-      uses: actions/cache@v5
-      with:
-        path: openwrt/dl
-        key: dl-${{ runner.os }}-${{ env.CACHE_BRANCH }}-immortalwrt-${{ hashFiles('openwrt/feeds.conf.default') }}
-        restore-keys: |
-          dl-${{ runner.os }}-${{ env.CACHE_BRANCH }}-immortalwrt-
-          dl-${{ runner.os }}-immortalwrt-
-
+    # 不再缓存 openwrt/dl：这份缓存有 2.7 GB，只省下约 7 分钟下载，
+    # 但每次都要恢复+保存，还出现过同一个 key 存了两份（2222MB 和 2700MB），
+    # 白白吃掉 4.9 GB 配额并让缓存总数逼近 10 GB 上限。直接每次重新下载更稳。
     - name: Download package
       run: |
         cd openwrt
-        [ "${{ steps.cache-dl.outputs.cache-hit }}" = "true" ] && echo "cache hit" || echo "cache miss"
         df -h . || true
         # 不再用 output=$(...) 全量捕获：包多时输出能到几十 MB，既占内存又把日志吞掉，
         # 一旦 runner 中途挂了什么线索都留不下。改成写文件 + 只打尾部。
@@ -589,6 +589,35 @@ jobs:
             echo "Deleting run $run_id"
             curl -X DELETE -H "Authorization: token $GITHUB_TOKEN" \
               "https://api.github.com/repos/${{ github.repository }}/actions/runs/$run_id"
+          done
+        fi
+
+    # ccache 的 key 带 run_id，所以每次构建都会新增一份（约 0.4~0.8 GB），
+    # 不清理的话很快撞上仓库 10 GB 缓存上限，导致旧缓存被随机淘汰。
+    # 这里每次构建后只保留最新 3 份 ccache。
+    - name: 清理旧 ccache 缓存
+      if: always()
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        KEEP_CCACHE: 3
+      run: |
+        CACHES=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+          "https://api.github.com/repos/${{ github.repository }}/actions/caches?per_page=100")
+        DEL_IDS=$(echo "$CACHES" | jq -r --argjson keep "$KEEP_CCACHE" '
+          [.actions_caches[]
+            | select(.key | startswith("ccache-msm8916-"))
+            | {id, created_at}]
+          | sort_by(.created_at)
+          | .[:-$keep]
+          | .[].id
+        ' 2>/dev/null || true)
+        if [[ -z "$DEL_IDS" ]]; then
+          echo "ccache 缓存无需清理"
+        else
+          echo "$DEL_IDS" | while read cid; do
+            echo "删除 ccache 缓存 $cid"
+            curl -s -X DELETE -H "Authorization: token $GITHUB_TOKEN" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/caches/$cid"
           done
         fi
         
