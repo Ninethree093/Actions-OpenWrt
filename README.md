@@ -1,6 +1,12 @@
-# Actions-OpenWrt (msm8916)
+# ImmortalWrt-MSM8916-Actions
 
-基于 GitHub Actions 自动编译 **高通 msm8916（OpenStick 系列 4G 棒子）** 的 immortalwrt 固件。
+用 GitHub Actions 给 **高通 msm8916（OpenStick 系列 4G 棒子）** 编译 ImmortalWrt 固件的独立项目。
+
+- 13 个机型，可单选一个或全编
+- 源码可选 immortalwrt 的**分支**（跟随上游更新）或**稳定版 tag**（出正式版号）
+- 产物自动发布到 Releases，附完整包清单与校验和
+- 25.12 / v25.12.x 已**实机验证可启动**；24.10 与 master 尚未验证
+
 本仓库只保留 msm8916 相关的编译流程，其它机型（mt7620 / mt7621 / mt7628 / XG-040G / sy108 等）已移除。
 
 ## 工作流
@@ -159,8 +165,24 @@ flash.zip                      首次刷机用的线刷包
 - 快速进 bootloader：直接重启即进入 bootloader 模式
 - 系统内也可以执行：`dd if=/dev/zero of=/dev/mmcblk0p12 bs=4M sync`
 
+## 许可证
+
+本仓库是**聚合分发**，不同部分各自遵循原来的许可证：
+
+| 部分 | 许可证 |
+| --- | --- |
+| 自有文件（`.github/workflows/`、`diy-part*.sh`、`check-patches.sh`、`config/`、`scripts/files-8916/`） | [GPL-3.0](LICENSE)（继承自上游 `xuxin1955/Actions`） |
+| `scripts/msm89xx/`（immortalwrt / OpenWrt 源码） | GPL-2.0 为主，逐文件以 SPDX 为准，见 [LICENSE.md](scripts/msm89xx/LICENSE.md) |
+| `flash.zip` 内的第三方工具与厂商镜像 | 见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) |
+
+> GPL-2.0 与 GPL-3.0 不能合并为单一作品，所以上述两部分是**并列的独立组件**，根目录 `LICENSE` 只覆盖自有文件。
+>
+> `flash.zip` 里的 `aboot.bin`、`hyp.mbn`、`rpm.mbn`、`sbl1.mbn`、`tz.mbn` 是从原厂固件提取的高通签名镜像，**没有可再分发的授权**，正式发布前建议移除。
+
 ## 鸣谢
 
+- [P3TERX/Actions-OpenWrt](https://github.com/P3TERX/Actions-OpenWrt)（MIT，云编译工作流的最初模板）
+- [xuxin1955/Actions](https://github.com/xuxin1955/Actions)（GPL-3.0，本仓库的直接上游）
 - [GitHub Actions](https://github.com/features/actions)
 - [OpenWrt](https://github.com/openwrt/openwrt)
 - [immortalwrt](https://github.com/immortalwrt/immortalwrt)
